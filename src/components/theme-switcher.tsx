@@ -1,24 +1,37 @@
 'use client'
 
-import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
-
-import * as React from 'react'
-
 import { Button } from '@/components/ui/button'
+import { SunIcon, MoonIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export function ThemeSwitcher() {
-    const { setTheme, theme } = useTheme()
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
+
+    // Avoid hydration mismatch
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return null
 
     return (
         <Button
+            variant="outline"
             size="icon"
-            className="relative"
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            style={{
+                border: '2px solid black',
+                boxShadow: '4px 4px 0px 0px #000000',
+            }}
+            className="h-10 w-10 rounded-full"
         >
-            <Sun className="stroke-text hidden h-6 w-6 w500:h-4 w500:w-4 dark:inline" />
-            <Moon className="stroke-text inline h-6 w-6 w500:h-4 w500:w-4 dark:hidden" />
-            <span className="sr-only">Toggle theme</span>
+            {theme === 'dark' ? (
+                <SunIcon className="h-5 w-5" />
+            ) : (
+                <MoonIcon className="h-5 w-5" />
+            )}
         </Button>
     )
 }

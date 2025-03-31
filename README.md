@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Video Chat Room
 
-## Getting Started
+A modern video chat application that allows users to create and join topic-based video chat rooms. Built with Next.js, Agora RTC, and Clerk authentication.
 
-First, run the development server:
+## Features
 
+### Implemented ✅
+- User Authentication (Clerk)
+  - Sign up and sign in functionality
+  - Protected routes and API endpoints
+- Room Management
+  - Create new rooms with name, description, topics, and max users
+  - Public and private room options
+  - Room search functionality
+  - Room settings management
+- Video Chat
+  - Real-time video and audio streaming using Agora RTC
+  - Basic controls (mute, video toggle, deafen)
+  - Chat functionality within rooms
+- UI/UX
+  - Modern neobrutalism design
+  - Responsive layout
+  - Dark mode support
+  - Loading states and error handling
+
+### In Progress 🚧
+- Room Features
+  - Room password protection
+  - Room moderation tools
+- Video Chat Enhancements
+  - Better video grid layout
+  - User avatars and status indicators
+- Chat Improvements
+  - Real-time message updates
+  - File sharing
+  - Emoji support
+  - Message reactions
+
+### Planned 📋
+- User Profiles
+  - Profile customization
+  - User preferences
+- Room Features
+  - Room categories and tags
+  - Room scheduling
+  - Room templates
+- Advanced Features
+  - AI-powered room recommendations
+  - Content moderation
+  - Analytics dashboard
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React, TailwindCSS
+- **Authentication**: Clerk
+- **Video Chat**: Agora RTC SDK
+- **Database**: Prisma with PostgreSQL
+- **Styling**: shadcn/ui components
+- **State Management**: React hooks
+- **API**: Next.js API routes
+- **Package Manager**: Bun (for faster installation and build times)
+
+## Prerequisites
+
+- Bun installed
+- PostgreSQL database
+- Clerk account and API keys
+- Agora account and API keys
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+
+# Agora
+NEXT_PUBLIC_AGORA_APP_ID=your_agora_app_id
+
+# Database
+DATABASE_URL=your_postgresql_database_url
+```
+
+## Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+git clone https://github.com/yourusername/video-chat-room.git
+cd video-chat-room
+```
+
+2. Install dependencies using Bun:
+```bash
+bun install
+```
+
+3. Set up the database:
+```bash
+bunx prisma generate
+bunx prisma db push
+```
+
+4. Start the development server:
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Using Bun
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project is configured to use Bun as the package manager and runtime for improved performance:
 
-## Learn More
+- **Package Management**: `bun install` instead of `npm install`
+- **Development**: `bun dev` instead of `npm run dev`
+- **Building**: `bun build` instead of `npm run build`
+- **Running Scripts**: `bunx` instead of `npx`
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── room/              # Room pages
+│   └── rooms/             # Rooms listing and creation
+├── components/            # React components
+│   ├── ui/               # UI components
+│   └── room-card.tsx     # Room card component
+├── lib/                   # Utility functions
+└── middleware.ts         # Next.js middleware
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Contributing
 
-## Deploy on Vercel
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

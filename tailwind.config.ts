@@ -9,6 +9,13 @@ const config: Config = {
 		'./src/app/**/*.{js,ts,jsx,tsx,mdx}',
 	],
 	theme: {
+		container: {
+			center: true,
+			padding: '2rem',
+			screens: {
+				'2xl': '1400px',
+			},
+		},
 		extend: {
 			width: {
 				container: '1300px',
@@ -21,20 +28,57 @@ const config: Config = {
 				// light mode
 				bg: '#ffffff',
 				text: '#000',
-				border: '#000',
+				border: 'hsl(var(--border))',
 
 				// dark mode
 				darkBg: '#212121',
 				darkText: '#eeefe9',
 				darkBorder: '#000',
 				secondaryBlack: '#212121', // opposite of plain white, not used pitch black because borders and box-shadows are that color
+
+				input: 'hsl(var(--input))',
+				ring: 'hsl(var(--ring))',
+				background: 'hsl(var(--background))',
+				foreground: 'hsl(var(--foreground))',
+				primary: {
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))',
+				},
+				secondary: {
+					DEFAULT: 'hsl(var(--secondary))',
+					foreground: 'hsl(var(--secondary-foreground))',
+				},
+				destructive: {
+					DEFAULT: 'hsl(var(--destructive))',
+					foreground: 'hsl(var(--destructive-foreground))',
+				},
+				muted: {
+					DEFAULT: 'hsl(var(--muted))',
+					foreground: 'hsl(var(--muted-foreground))',
+				},
+				accent: {
+					DEFAULT: 'hsl(var(--accent))',
+					foreground: 'hsl(var(--accent-foreground))',
+				},
+				popover: {
+					DEFAULT: 'hsl(var(--popover))',
+					foreground: 'hsl(var(--popover-foreground))',
+				},
+				card: {
+					DEFAULT: 'hsl(var(--card))',
+					foreground: 'hsl(var(--card-foreground))',
+				},
 			},
 			borderRadius: {
 				base: '5px',
+				lg: 'var(--radius)',
+				md: 'calc(var(--radius) - 2px)',
+				sm: 'calc(var(--radius) - 4px)',
 			},
 			boxShadow: {
 				light: '4px 4px 0px 0px #000',
 				dark: '4px 4px 0px 0px #000',
+				'neobrutalism': '4px 4px 0px 0px rgba(0, 0, 0, 1)',
 			},
 			translate: {
 				boxShadowX: '4px',
