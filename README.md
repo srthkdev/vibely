@@ -53,7 +53,7 @@ A modern video chat application that allows users to create and join topic-based
 
 - **Frontend**: Next.js 14, React, TailwindCSS
 - **Authentication**: Clerk
-- **Video Chat**: Agora RTC SDK
+- **Video Chat**: WebRTC
 - **Database**: Prisma with PostgreSQL
 - **Styling**: shadcn/ui components
 - **State Management**: React hooks
