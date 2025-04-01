@@ -110,8 +110,7 @@ export default function AboutPage() {
             <motion.a 
               href="/rooms"
               className="neobrutalism-button bg-white text-black px-8 py-3 text-xl font-bold inline-block"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              
             >
               Browse Rooms
             </motion.a>

@@ -18,7 +18,7 @@ export function ThemeSwitcher() {
 
     return (
         <Button
-            variant="outline"
+            
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             style={{

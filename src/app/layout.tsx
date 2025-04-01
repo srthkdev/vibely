@@ -1,11 +1,20 @@
 import { ClerkProvider } from "@clerk/nextjs"
-import { Inter } from "next/font/google"
+import { Heebo, Acme } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import QueryProvider from "@/components/providers/query-provider"
 import NavBar from "@/components/navbar"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const heebo = Heebo({ 
+  subsets: ["latin"],
+  variable: "--font-heebo"
+})
+
+const acme = Acme({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-acme"
+})
 
 export const metadata = {
   title: "Video Chat Room",
@@ -24,7 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${heebo.variable} ${acme.variable} ${heebo.className}`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

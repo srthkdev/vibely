@@ -115,7 +115,7 @@ const NavBar = () => {
                                 <>
                                     <SignInButton mode="modal">
                                         <Button
-                                            variant="outline"
+                                            
                                             className="font-bold"
                                             style={{
                                                 border: '2px solid black',
@@ -127,6 +127,7 @@ const NavBar = () => {
                                     </SignInButton>
                                     <SignUpButton mode="modal">
                                         <Button
+                                            
                                             className="font-bold"
                                             style={{
                                                 border: '2px solid black',
@@ -181,7 +182,7 @@ const NavBar = () => {
                                 <>
                                     <SignInButton mode="modal">
                                         <Button
-                                            variant="outline"
+                                            
                                             className="w-full"
                                             style={{
                                                 border: '2px solid black',

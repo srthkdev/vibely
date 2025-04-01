@@ -3,19 +3,23 @@
 import { TypeAnimation } from 'react-type-animation'
 import { FaVideo, FaUsers, FaLock, FaComments } from 'react-icons/fa'
 import Marquee from "react-fast-marquee"
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 
 export default function HomePage() {
-    const features = [
-        { text: "Video Chat", Icon: FaVideo },
-        { text: "Topic Rooms", Icon: FaUsers },
-        { text: "Private Rooms", Icon: FaLock },
-        { text: "Live Chat", Icon: FaComments },
-    ]
+    const [currentWord, setCurrentWord] = useState(0);
+    const words = ["Connect", "Share", "Thrive"];
+    const colors = ["#FFDC58", "#88AAEE", "#A388EE"];
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setCurrentWord((prev) => (prev + 1) % words.length);
+        }, 2000);
+        return () => clearInterval(intervalId);
+    }, []);
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -99,27 +103,36 @@ export default function HomePage() {
                 animate="visible"
             >
                 <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start lg:ml-8">
-                    <motion.div variants={itemVariants}>
-                        <TypeAnimation
-                            className="text-3xl lg:text-3xl font-bold text-[#76fbd9] dark:text-[#76fbd9] relative z-10"
-                            sequence={['Connect!', 1000, 'Collaborate!', 1000, 'Communicate!', 1000, 'Create!', 1000]}
-                        />
-                    </motion.div>
 
                     <motion.h1
                         variants={itemVariants}
-                        className="text-3xl font-heading md:text-4xl lg:text-5xl mt-5"
+                        className="text-3xl font-heading md:text-4xl lg:text-5xl mt-5 font-[var(--font-heading)] flex flex-col"
                     >
-                        Video Chat Rooms 📹
+                        <div className="flex items-center">
+                            <AnimatePresence mode="wait">
+                                <motion.span
+                                    key={currentWord}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.3 }}
+                                    style={{ color: colors[currentWord] }}
+                                >
+                                    {words[currentWord]}
+                                </motion.span>
+                            </AnimatePresence>
+                            
+                        </div>
+                        <div className="mt-2">
+                            Your Perfect Space in Vibely Rooms
+                        </div>
                     </motion.h1>
 
                     <motion.p
                         variants={itemVariants}
-                        className="my-12 mt-8 text-lg font-normal leading-relaxed md:text-xl lg:text-2xl lg:leading-relaxed"
+                        className="my-8 text-lg font-bold leading-relaxed md:text-xl lg:text-2xl tracking-tight max-w-[620px]"
                     >
-                        Join topic-based video rooms and connect with people who share your interests.
-                        Create private rooms for team meetings or public ones to meet new people.
-                        Experience high-quality video and audio with our modern platform.
+                        Vibely Rooms connects like-minded people through high-quality video chat spaces, each dedicated to specific interests, hobbies, and passions. Join topic-based video rooms designed for genuine conversation.
                     </motion.p>
 
                     <div className="flex flex-col items-center lg:items-start mb-8">
@@ -132,8 +145,9 @@ export default function HomePage() {
                         >
                             <Link href="/rooms">
                                 <Button 
-                                    size="lg" 
-                                    className="h-12 text-base font-heading md:text-lg lg:h-14 lg:text-xl"
+                                    variant="default"
+                                    size="lg"
+                                    className="neobrutalism-button h-12 text-base font-heading md:text-lg lg:h-14 lg:text-xl"
                                     style={{
                                         border: '2px solid black',
                                         boxShadow: '4px 4px 0px 0px #000000',
@@ -145,8 +159,8 @@ export default function HomePage() {
                             <Link href="/room/create">
                                 <Button 
                                     size="lg" 
-                                    variant="outline"
-                                    className="h-12 text-base font-heading md:text-lg lg:h-14 lg:text-xl"
+                                    
+                                    className="neobrutalism-button h-12 text-base font-heading md:text-lg lg:h-14 lg:text-xl"
                                     style={{
                                         border: '2px solid black',
                                         boxShadow: '4px 4px 0px 0px #000000',
@@ -187,10 +201,10 @@ export default function HomePage() {
                                 <div className="border-t border-gray-300 dark:border-gray-600 pt-2">
                                     <div className="flex items-center justify-between">
                                         <div className="flex gap-2">
-                                            <Button size="sm" variant="outline" className="rounded-full p-2 h-8 w-8">
+                                            <Button size="sm" className="rounded-full p-2 h-8 w-8">
                                                 <FaVideo className="h-4 w-4" />
                                             </Button>
-                                            <Button size="sm" variant="outline" className="rounded-full p-2 h-8 w-8">
+                                            <Button size="sm" className="rounded-full p-2 h-8 w-8">
                                                 <FaComments className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -203,32 +217,6 @@ export default function HomePage() {
                 </motion.div>
             </motion.div>
 
-            <motion.div
-                className="absolute bottom-0 left-0 w-full"
-                variants={marqueeContainerVariants}
-                initial="hidden"
-                animate="visible"
-            >
-                <Marquee
-                    className="border-t-border dark:border-t-darkBorder dark:bg-secondaryBlack border-t-2 border-b-2 border-b-border dark:border-b-darkBorder bg-white py-3 sm:py-5 font-base"
-                    direction="left"
-                    speed={90}
-                    loop={0}
-                >
-                    {features.map((feature, id) => (
-                        <motion.div
-                            className="flex items-center mx-8"
-                            key={id}
-                            whileHover={{scale: 1.1, transition: {duration: 0.2}}}
-                        >
-                            <feature.Icon className="text-5xl mr-4 text-[#76fbd9] dark:text-[#76fbd9]"/>
-                            <span className="text-xl font-heading sm:text-2xl lg:text-4xl">
-                                {feature.text}
-                            </span>
-                        </motion.div>
-                    ))}
-                </Marquee>
-            </motion.div>
         </header>
     )
 }
