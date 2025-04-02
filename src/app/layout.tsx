@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import QueryProvider from "@/components/providers/query-provider"
 import NavBar from "@/components/navbar"
 import "./globals.css"
+import { Toaster } from "sonner"
 
 const heebo = Heebo({ 
   subsets: ["latin"],
@@ -53,6 +54,7 @@ export default function RootLayout({
               <NavBar />
               {children}
             </QueryProvider>
+            <Toaster position="bottom-right" />
           </ClerkProvider>
         </ThemeProvider>
       </body>

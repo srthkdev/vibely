@@ -10,6 +10,7 @@ import React, { useState, useEffect } from "react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import TestimonialsCarousel from '@/components/TestimonialsCarousel'
 import FAQ from '@/components/FAQ'
+import Footer from '@/components/Footer'
 import '@/styles/embla.css'
 
 export default function HomePage() {
@@ -166,48 +167,15 @@ export default function HomePage() {
                             </motion.div>
                         </div>
                     </div>
-                    <motion.div
-                    className="w-full lg:w-1/2 mt-8 lg:mt-0 flex justify-center"
-                    variants={itemVariants}
-                >
-                    <div className="relative w-[450px] h-[450px] rounded-xl overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#76fbd9] to-[#4b6fff] opacity-80 rounded-xl"></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="bg-white dark:bg-secondaryBlack p-4 rounded-lg shadow-lg" 
-                                style={{
-                                    border: '2px solid black',
-                                    boxShadow: '8px 8px 0px 0px #000000',
-                                }}>
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    {[1, 2, 3, 4].map((num) => (
-                                        <div 
-                                            key={num} 
-                                            className="w-[100px] h-[70px] bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center"
-                                            style={{
-                                                border: '1px solid black',
-                                            }}
-                                        >
-                                            <FaUsers className="text-3xl text-gray-500 dark:text-gray-400" />
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="border-t border-gray-300 dark:border-gray-600 pt-2">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex gap-2">
-                                            <Button size="sm" className="rounded-full p-2 h-8 w-8">
-                                                <FaVideo className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" className="rounded-full p-2 h-8 w-8">
-                                                <FaComments className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-xs">Leave Room</Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                <div className="flex justify-center lg:justify-start">
+                    <Image 
+                        src="/Character2.svg" 
+                        alt="Character Illustration"
+                        width={500}
+                        height={500}
+                        className="rounded-lg max-w-full h-auto"
+                    />
+                </div>
 
                 </motion.div>
 
@@ -282,9 +250,12 @@ export default function HomePage() {
             <TestimonialsCarousel />
 
             {/* Black line separator */}
-            <div className="w-full h-[2px] bg-black"></div>
+            <div className="w-full h-1 bg-black"></div>
             {/* FAQ Section */}
             <FAQ />
+            <div className="w-full h-1 bg-black"></div>
+            {/* Footer */}
+            <Footer />
         </React.Fragment>
     )
 }

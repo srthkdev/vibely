@@ -56,7 +56,7 @@ export default function TestimonialsCarousel() {
         align: 'start',
         skipSnaps: false,
         dragFree: false
-    }, [Autoplay({ delay: 3000 })])
+    }, [Autoplay({ delay: 2500 })])
 
     return (
         <section className="w-full bg-bg dark:bg-secondaryBlack bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:70px_70px] py-16">
