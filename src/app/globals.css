@@ -85,6 +85,7 @@
   /* Custom neobrutalism variables */
   --main: #76fbd9;
   --main-accent: #76fbd9;
+  --yellow: #FFDC58;
   --dark-bg: #212121;
   --dark-text: #eeefe9;
   --dark-border: #000;
@@ -134,6 +135,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  .dark body {
+    background-color: #212121;
+  }
 }
 
 /* Neobrutalism utility classes */
@@ -159,22 +163,22 @@
   background-color: var(--dark-bg);
 }
 
-.neobrutalism-button {
-  border: 2px solid black;
-  box-shadow: 4px 4px 0px 0px #000000;
-  border-radius: 0;
+/* Custom button styles that can be applied independently */
+.custom-button-hover {
   transition: all 0.2s ease;
   transform: translate(0, 0);
 }
 
-.neobrutalism-button:hover {
+.custom-button-hover:hover {
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0px 0px #000000;
 }
 
-.neobrutalism-button:active {
+.custom-button-hover:active {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0px 0px #000000;
 }
 
 /* Word animation styles removed as we're using React state-based animation now */
+
+/* Custom yellow button style - REMOVED: will use buttonVariants instead */

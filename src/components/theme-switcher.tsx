@@ -18,13 +18,9 @@ export function ThemeSwitcher() {
 
     return (
         <Button
-            
+            variant="yellow"
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            style={{
-                border: '2px solid black',
-                boxShadow: '4px 4px 0px 0px #000000',
-            }}
             className="h-10 w-10 rounded-full"
         >
             {theme === 'dark' ? (

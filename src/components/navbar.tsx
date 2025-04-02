@@ -67,29 +67,35 @@ const NavBar = () => {
                     className={twMerge(
                         `mx-auto mt-4 flex h-[80px] w-full max-w-screen-xl
                         items-center justify-between px-6 transition-transform
-                        duration-300 ease-in-out bg-white dark:bg-darkBg transform`,
+                        duration-300 ease-in-out bg-white dark:bg-[#212121] transform
+                        border-3 border-black
+                        shadow-[8px_8px_0px_0px_#000] `,
                         showNav ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'
                     )}
-                    style={{
-                        border: '3px solid black',
-                        boxShadow: '8px 8px 0px 0px #000000',
-                    }}
                 >
                     {/* Logo */}
                     <h1 className="text-3xl font-black tracking-tight
-                        text-black dark:text-white transform -rotate-2 hover:rotate-0 transition-transform
-                        duration-300 min-w-[80px] xs:min-w-[100px] lg:text-5xl flex items-center">
-                        <Link href="/" className="flex items-center gap-2">
-                            <Image 
-                                src="/logo.svg" 
-                                alt="Vibely Logo"
-                                width={36}
-                                height={36}
-                                className="w-9 h-9"
-                            />
-                            <span>Vibely</span>
-                        </Link>
-                    </h1>
+                transform -rotate-2 hover:rotate-0 transition-transform
+                duration-300 min-w-[80px] xs:min-w-[100px] lg:text-5xl flex items-center">
+    <Link href="/" className="flex items-center gap-2">
+        <Image 
+            src="/logo.svg" 
+            alt="Vibely Logo"
+            width={36}
+            height={36}
+            className="w-9 h-9"
+        />
+        <span className="relative">
+            {/* Simple 3D black text-shadow effect */}
+            <span className="text-white" style={{
+                textShadow: 
+                    "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000"
+            }}>
+                Vibely
+            </span>
+        </span>
+    </Link>
+</h1>
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center text-base lg:text-lg space-x-6">
@@ -100,11 +106,9 @@ const NavBar = () => {
                                 <>
                                     <Link href="/rooms">
                                         <Button
+                                            variant="yellow"
+                                            size="sm"
                                             className="font-bold"
-                                            style={{
-                                                border: '2px solid black',
-                                                boxShadow: '4px 4px 0px 0px #000000',
-                                            }}
                                         >
                                             Browse Rooms
                                         </Button>
@@ -115,24 +119,18 @@ const NavBar = () => {
                                 <>
                                     <SignInButton mode="modal">
                                         <Button
-                                            
+                                            variant="yellow"
+                                            size="sm"
                                             className="font-bold"
-                                            style={{
-                                                border: '2px solid black',
-                                                boxShadow: '4px 4px 0px 0px #000000',
-                                            }}
                                         >
                                             Sign In
                                         </Button>
                                     </SignInButton>
                                     <SignUpButton mode="modal">
                                         <Button
-                                            
+                                            variant="yellow"
+                                            size="sm"
                                             className="font-bold"
-                                            style={{
-                                                border: '2px solid black',
-                                                boxShadow: '4px 4px 0px 0px #000000',
-                                            }}
                                         >
                                             Sign Up
                                         </Button>
@@ -149,11 +147,7 @@ const NavBar = () => {
                         <ThemeSwitcher />
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="p-2 bg-main dark:bg-main transform hover:-rotate-3 transition-transform"
-                            style={{
-                                border: '2px solid black',
-                                boxShadow: '4px 4px 0px 0px #000000',
-                            }}
+                            className="p-2 bg-[var(--yellow)] transform hover:-rotate-3 transition-transform border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white"
                         >
                             <div className="w-6 h-0.5 bg-black mb-1"></div>
                             <div className="w-6 h-0.5 bg-black mb-1"></div>
@@ -170,11 +164,9 @@ const NavBar = () => {
                     ref={menuRef}
                 >
                     <div
-                        className="w-full bg-white dark:bg-darkBg p-4 transform"
-                        style={{
-                            border: '3px solid black',
-                            boxShadow: '8px 8px 0px 0px #000000',
-                        }}
+                        className="w-full bg-white dark:bg-[#212121] p-4 transform
+                        border-3 border-black dark:border-white
+                        shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.8)]"
                     >
                         <MobileNavLinks setIsOpen={setIsOpen} />
                         <div className="mt-4 flex flex-col gap-2">
@@ -182,23 +174,18 @@ const NavBar = () => {
                                 <>
                                     <SignInButton mode="modal">
                                         <Button
-                                            
+                                            variant="yellow"
+                                            size="sm"
                                             className="w-full"
-                                            style={{
-                                                border: '2px solid black',
-                                                boxShadow: '4px 4px 0px 0px #000000',
-                                            }}
                                         >
                                             Sign In
                                         </Button>
                                     </SignInButton>
                                     <SignUpButton mode="modal">
                                         <Button
+                                            variant="yellow"
+                                            size="sm"
                                             className="w-full"
-                                            style={{
-                                                border: '2px solid black',
-                                                boxShadow: '4px 4px 0px 0px #000000',
-                                            }}
                                         >
                                             Sign Up
                                         </Button>
@@ -207,11 +194,9 @@ const NavBar = () => {
                             ) : (
                                 <Link href="/rooms">
                                     <Button
+                                        variant="yellow"
+                                        size="sm"
                                         className="w-full"
-                                        style={{
-                                            border: '2px solid black',
-                                            boxShadow: '4px 4px 0px 0px #000000',
-                                        }}
                                     >
                                         Browse Rooms
                                     </Button>
@@ -229,7 +214,6 @@ function NavLinks() {
     const links = [
         { href: "/", label: "Home" },
         { href: "/rooms", label: "Rooms" },
-        { href: "/room/create", label: "Create Room" },
         { href: "/about", label: "About" }
     ];
 
@@ -239,11 +223,12 @@ function NavLinks() {
                 <Link
                     key={link.href}
                     href={link.href}
-                    className="px-3 py-1 font-bold text-black dark:text-white hover:-translate-y-1 hover:rotate-2
-                             transform transition-all duration-200"
+                    className="px-3 py-1 font-bold text-black dark:text-white 
+                        hover:-translate-y-1 hover:border-black dark:hover:border-white
+                        transform transition-all duration-200"
                     style={{
                         border: '2px solid transparent',
-                        borderRadius: '0px',
+                        borderRadius: '0.5rem',
                     }}
                 >
                     {link.label}
@@ -257,7 +242,6 @@ function MobileNavLinks({ setIsOpen }: { setIsOpen: React.Dispatch<React.SetStat
     const links = [
         { href: "/", label: "Home" },
         { href: "/rooms", label: "Rooms" },
-        { href: "/room/create", label: "Create Room" },
         { href: "/about", label: "About" }
     ];
 
@@ -267,15 +251,16 @@ function MobileNavLinks({ setIsOpen }: { setIsOpen: React.Dispatch<React.SetStat
                 <Link
                     key={link.href}
                     href={link.href}
-                    className="p-2 text-center text-lg font-bold bg-[#76fbd9] dark:bg-[#4b6fff]
-                             transform hover:rotate-2 transition-transform"
-                    style={{
-                        border: '2px solid black',
-                        boxShadow: '4px 4px 0px 0px #000000',
-                    }}
+                    className="p-2 text-center text-lg font-bold"
                     onClick={() => setIsOpen(false)}
                 >
-                    {link.label}
+                    <Button
+                        variant="yellow"
+                        size="sm"
+                        className="w-full"
+                    >
+                        {link.label}
+                    </Button>
                 </Link>
             ))}
         </div>
