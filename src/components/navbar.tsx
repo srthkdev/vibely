@@ -104,15 +104,15 @@ const NavBar = () => {
                         <div className="flex items-center gap-4">
                             {isSignedIn ? (
                                 <>
-                                    <Link href="/rooms">
-                                        <Button
-                                            variant="yellow"
-                                            size="sm"
-                                            className="font-bold"
-                                        >
-                                            Browse Rooms
-                                        </Button>
-                                    </Link>
+                                    <Button
+                                        variant="yellow"
+                                        size="sm"
+                                        className="font-bold"
+                                    >
+                                        <Link href="/rooms" legacyBehavior passHref>
+                                            <a>Browse Rooms</a>
+                                        </Link>
+                                    </Button>
                                     <UserButton afterSignOutUrl="/" />
                                 </>
                             ) : (
@@ -192,15 +192,15 @@ const NavBar = () => {
                                     </SignUpButton>
                                 </>
                             ) : (
-                                <Link href="/rooms">
-                                    <Button
-                                        variant="yellow"
-                                        size="sm"
-                                        className="w-full"
-                                    >
-                                        Browse Rooms
-                                    </Button>
-                                </Link>
+                                <Button
+                                    variant="yellow"
+                                    size="sm"
+                                    className="w-full"
+                                >
+                                    <Link href="/rooms" legacyBehavior passHref>
+                                        <a>Browse Rooms</a>
+                                    </Link>
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -223,15 +223,20 @@ function NavLinks() {
                 <Link
                     key={link.href}
                     href={link.href}
-                    className="px-3 py-1 font-bold text-black dark:text-white 
+                    legacyBehavior
+                    passHref
+                >
+                    <a
+                        className="px-3 py-1 font-bold text-black dark:text-white 
                         hover:-translate-y-1 hover:border-black dark:hover:border-white
                         transform transition-all duration-200"
-                    style={{
-                        border: '2px solid transparent',
-                        borderRadius: '0.5rem',
-                    }}
-                >
-                    {link.label}
+                        style={{
+                            border: '2px solid transparent',
+                            borderRadius: '0.5rem',
+                        }}
+                    >
+                        {link.label}
+                    </a>
                 </Link>
             ))}
         </>
@@ -248,20 +253,18 @@ function MobileNavLinks({ setIsOpen }: { setIsOpen: React.Dispatch<React.SetStat
     return (
         <div className="flex flex-col space-y-3">
             {links.map((link) => (
-                <Link
+                <Button
                     key={link.href}
-                    href={link.href}
-                    className="p-2 text-center text-lg font-bold"
-                    onClick={() => setIsOpen(false)}
+                    variant="yellow"
+                    size="sm"
+                    className="w-full"
                 >
-                    <Button
-                        variant="yellow"
-                        size="sm"
-                        className="w-full"
-                    >
-                        {link.label}
-                    </Button>
-                </Link>
+                    <Link href={link.href} legacyBehavior passHref>
+                        <a onClick={() => setIsOpen(false)}>
+                            {link.label}
+                        </a>
+                    </Link>
+                </Button>
             ))}
         </div>
     );

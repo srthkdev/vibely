@@ -148,22 +148,22 @@ export default function HomePage() {
                                 whileTap="tap"
                                 className="flex gap-4"
                             >
-                                <Link href="/rooms">
-                                    <Button
-                                        variant="yellow"
-                                        size="lg"
-                                    >
-                                        Browse Rooms
-                                    </Button>
-                                </Link>
-                                <Link href="/room/create">
-                                    <Button 
-                                        variant="yellow"
-                                        size="lg"
-                                    >
-                                        Create Room
-                                    </Button>
-                                </Link>
+                                <Button
+                                    variant="yellow"
+                                    size="lg"
+                                >
+                                    <Link href="/rooms" legacyBehavior passHref>
+                                        <a>Browse Rooms</a>
+                                    </Link>
+                                </Button>
+                                <Button 
+                                    variant="yellow"
+                                    size="lg"
+                                >
+                                    <Link href="/rooms/create" legacyBehavior passHref>
+                                        <a>Create Room</a>
+                                    </Link>
+                                </Button>
                             </motion.div>
                         </div>
                     </div>
