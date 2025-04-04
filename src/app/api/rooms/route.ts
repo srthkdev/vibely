@@ -1,32 +1,48 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs"
 import { PrismaClient } from "@prisma/client"
+import { NextRequest } from "next/server"
+import { cookies } from "next/headers"
 
 const prisma = new PrismaClient()
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth()
+    // Parse the request body
+    const { name, description, isPublic, maxUsers, topics, password, userId } = await req.json()
     
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    }
+    
+    // Find the user in our database
+    let dbUser = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    })
+    
+    if (!dbUser) {
+      // Create a new user if they don't exist
+      dbUser = await prisma.user.create({
+        data: {
+          clerkId: userId,
+          username: `user-${userId.substring(0, 8)}`,
+        }
+      })
+      
+      if (!dbUser) {
+        return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
+      }
     }
 
-    const { name, description, isPublic, maxUsers, topics, password } = await req.json()
-
+    // Create the room with the authenticated user as owner
     const room = await prisma.room.create({
       data: {
         name,
         description,
         isPublic,
         maxUsers,
-        userId,
-        password,
-        topics: {
-          create: topics.map((topic: string) => ({
-            name: topic
-          }))
-        }
+        ownerId: dbUser.id,
+        password: password || undefined,
+        topics,
       }
     })
 
@@ -37,30 +53,36 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const query = searchParams.get("query") || ""
     
+    // Get rooms from database with owner information
     const rooms = await prisma.room.findMany({
       where: {
-        isPublic: true,
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { description: { contains: query, mode: "insensitive" } }
         ]
       },
       include: {
-        topics: true,
-        participants: {
+        participants: true,
+        owner: {
           select: {
-            userId: true
+            id: true,
+            username: true,
+            clerkId: true
           }
         }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     })
 
-    const roomsWithParticipantCount = rooms.map((room: any) => ({
+    // Format the response with participant count and owner info
+    const roomsWithParticipantCount = rooms.map((room) => ({
       ...room,
       participantCount: room.participants.length,
       participants: undefined

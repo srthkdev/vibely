@@ -1,31 +1,21 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { FaImage, FaPlus, FaTimes } from "react-icons/fa"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Image as ImageIcon, Plus, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-
-// Mock data to store created rooms (this would be replaced by a real API/database call)
-export const mockRooms = [
-  {
-    id: "1",
-    name: "Tech Enthusiasts",
-    description: "Discuss the latest in technology and innovation",
-    topics: ["Technology", "Innovation", "Programming"],
-    participantCount: 5,
-    maxUsers: 10,
-    isPublic: true,
-  }
-]
+import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+import { useUser } from "@clerk/nextjs"
 
 export default function CreateRoomPage() {
   const router = useRouter()
+  const { user } = useUser()
   const [isPublic, setIsPublic] = useState(true)
   const [image, setImage] = useState<string | null>(null)
   const [topics, setTopics] = useState<string[]>([])
@@ -66,24 +56,44 @@ export default function CreateRoomPage() {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     
-    // Create a new room
-    const newRoom = {
-      id: `${Date.now()}`, // Generate a unique ID
-      name: formData.get("name") as string,
-      description: formData.get("description") as string,
-      isPublic,
-      maxUsers: parseInt(formData.get("maxUsers") as string),
-      topics: topics,
-      password: isPublic ? null : formData.get("password") as string,
-      image: image,
-      participantCount: 0 // Start with 0 participants
+    if (!user) {
+      toast.error('You must be logged in to create a room')
+      return
     }
     
-    // Add the new room to our mock data
-    mockRooms.push(newRoom)
-    
-    // Redirect to rooms page
-    router.push("/rooms")
+    try {
+      // Create a new room via API
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies and authentication headers
+        body: JSON.stringify({
+          name: formData.get("name") as string,
+          description: formData.get("description") as string,
+          isPublic,
+          maxUsers: parseInt(formData.get("maxUsers") as string),
+          topics: topics,
+          password: isPublic ? null : formData.get("password") as string,
+          userId: user.id, // Pass the user ID from Clerk
+          // Note: In a real app, you'd handle image upload separately
+          // For now, we're not sending the image to keep it simple
+        }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to create room')
+      }
+      
+      toast.success('Room created successfully!')
+      
+      // Redirect to rooms page
+      router.push("/rooms")
+    } catch (error) {
+      console.error('Error creating room:', error)
+      toast.error('Failed to create room. Please try again.')
+    }
   }
 
   return (
@@ -104,7 +114,7 @@ export default function CreateRoomPage() {
                 <Label className="text-lg font-semibold font-['Acme',sans-serif]">Room Thumbnail</Label>
                 <div 
                   className={`relative h-48 w-full rounded-lg cursor-pointer overflow-hidden flex items-center justify-center ${
-                    !image ? 'bg-gradient-to-r from-[#FFDC58] to-[#88AAEE]' : ''
+                    !image ? 'bg-gradient-to-r from-[#fef2e8] to-[#Ffdc58] border-2 border-black' : ''
                   }`}
                   onClick={() => document.getElementById('room-image')?.click()}
                 >
@@ -124,13 +134,13 @@ export default function CreateRoomPage() {
                           setImage(null)
                         }}
                       >
-                        <FaTimes />
+                        <X className="h-4 w-4" />
                       </button>
                     </>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <FaImage className="h-12 w-12 text-white mb-2" />
-                      <p className="text-white font-medium">Click to upload a thumbnail (optional)</p>
+                      <ImageIcon className="h-12 w-12 text-black mb-2" />
+                      <p className="text-black font-medium">Click to upload a thumbnail (optional)</p>
                     </div>
                   )}
                   <input 
@@ -190,7 +200,7 @@ export default function CreateRoomPage() {
                     onClick={addTopic}
                     className="flex items-center gap-1 h-12"
                   >
-                    <FaPlus className="h-3 w-3" />
+                    <Plus className="h-3 w-3" />
                     Add
                   </Button>
                 </div>
@@ -208,7 +218,7 @@ export default function CreateRoomPage() {
                           onClick={() => removeTopic(topic)}
                           className="text-black hover:text-gray-700 focus:outline-none ml-1"
                         >
-                          <FaTimes className="h-3 w-3" />
+                          <X className="h-3 w-3" />
                         </button>
                       </div>
                     ))}

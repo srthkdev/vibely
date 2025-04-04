@@ -1,146 +1,112 @@
-# Video Chat Room
+# Video Chat Room Application
 
-A modern video chat application that allows users to create and join topic-based video chat rooms. Built with Next.js, Agora RTC, and Clerk authentication.
+A real-time video chat application built with Next.js, Mediasoup, and Socket.IO. The application features a modern UI with a retro-inspired design, supporting multiple participants in video rooms with chat functionality.
 
 ## Features
 
-### Implemented ✅
-- User Authentication (Clerk)
-  - Sign up and sign in functionality
-  - Protected routes and API endpoints
-- Room Management
-  - Create new rooms with name, description, topics, and max users
-  - Public and private room options
-  - Room search functionality
-  - Room settings management
-- Video Chat
-  - Real-time video and audio streaming using Agora RTC
-  - Basic controls (mute, video toggle, deafen)
-  - Chat functionality within rooms
-- UI/UX
-  - Modern neobrutalism design
-  - Responsive layout
-  - Dark mode support
-  - Loading states and error handling
-
-### In Progress 🚧
-- Room Features
-  - Room password protection
-  - Room moderation tools
-- Video Chat Enhancements
-  - Better video grid layout
-  - User avatars and status indicators
-- Chat Improvements
-  - Real-time message updates
-  - File sharing
-  - Emoji support
-  - Message reactions
-
-### Planned 📋
-- User Profiles
-  - Profile customization
-  - User preferences
-- Room Features
-  - Room categories and tags
-  - Room scheduling
-  - Room templates
-- Advanced Features
-  - AI-powered room recommendations
-  - Content moderation
-  - Analytics dashboard
+- Real-time video and audio communication
+- Text chat with message history
+- Room creation with customizable settings
+- User authentication via Clerk
+- Admin controls for room management
+- Participant management (mute, video toggle, kick)
+- Dark mode support
+- Modern UI with retro-inspired design
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React, TailwindCSS
+- **Frontend**: Next.js 14, React 18, TailwindCSS
+- **Backend**: Node.js, Socket.IO
+- **WebRTC**: Mediasoup
 - **Authentication**: Clerk
-- **Video Chat**: WebRTC, socket.io
-- **Database**: Prisma with PostgreSQL
-- **Styling**: shadcn/ui components
-- **State Management**: React hooks
-- **API**: Next.js API routes
-- **Package Manager**: Bun (for faster installation and build times)
+- **Package Manager**: Bun
+- **Database**: Prisma with your preferred database
+- **UI Components**: Custom components with shadcn/ui
 
 ## Prerequisites
 
-- Bun installed
-- PostgreSQL database
-- Clerk account and API keys
-- Agora account and API keys
-
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-# Clerk
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-
-# Agora
-NEXT_PUBLIC_AGORA_APP_ID=your_agora_app_id
-
-# Database
-DATABASE_URL=your_postgresql_database_url
-```
+- [Bun](https://bun.sh) (v1.2.5 or higher)
+- Node.js (v18 or higher)
+- A Clerk account for authentication
+- A database supported by Prisma
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/video-chat-room.git
-cd video-chat-room
+git clone <repository-url>
+cd video-chat-app
 ```
 
-2. Install dependencies using Bun:
+2. Install dependencies:
 ```bash
 bun install
 ```
 
-3. Set up the database:
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
+```
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+
+# Database
+DATABASE_URL=your_database_url
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+SOCKET_SERVER_PORT=3001
+```
+
+4. Set up the database:
 ```bash
 bunx prisma generate
 bunx prisma db push
 ```
 
-4. Start the development server:
+## Development
+
+Run the development server:
 ```bash
-bun dev
+bun run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+This will start both the Next.js frontend (port 3000) and Socket.IO server (port 3001).
 
-## Using Bun
+## Building for Production
 
-This project is configured to use Bun as the package manager and runtime for improved performance:
+```bash
+bun run build
+```
 
-- **Package Management**: `bun install` instead of `npm install`
-- **Development**: `bun dev` instead of `npm run dev`
-- **Building**: `bun build` instead of `npm run build`
-- **Running Scripts**: `bunx` instead of `npx`
+## Deployment
+
+1. Build the application
+2. Set up environment variables on your hosting platform
+3. Deploy the frontend and backend servers
+4. Configure your hosting platform to run both servers
 
 ## Project Structure
 
-```
-src/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── room/              # Room pages
-│   └── rooms/             # Rooms listing and creation
-├── components/            # React components
-│   ├── ui/               # UI components
-│   └── room-card.tsx     # Room card component
-├── lib/                   # Utility functions
-└── middleware.ts         # Next.js middleware
-```
+- `/src/app` - Next.js pages and API routes
+- `/src/components` - React components
+- `/src/hooks` - Custom React hooks
+- `/src/lib` - Utility functions and configurations
+- `/src/types` - TypeScript type definitions
+- `/prisma` - Database schema and migrations
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see LICENSE file for details

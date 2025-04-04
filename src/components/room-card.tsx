@@ -3,8 +3,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
-import { FaUsers } from "react-icons/fa"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Users, MoreVertical, Edit, Trash2 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface RoomCardProps {
   id: string
@@ -15,6 +22,9 @@ interface RoomCardProps {
   maxUsers: number
   isPublic: boolean
   image?: string | null
+  isOwner?: boolean
+  onDelete?: (id: string) => void
+  onEdit?: (id: string) => void
 }
 
 export function RoomCard({
@@ -25,8 +35,13 @@ export function RoomCard({
   participantCount,
   maxUsers,
   isPublic,
-  image
+  image,
+  isOwner = false,
+  onDelete,
+  onEdit
 }: RoomCardProps) {
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
   const getTopicColorClass = (index: number) => {
     const colors = [
       "bg-[#FFDC58] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]", // Yellow
@@ -39,7 +54,7 @@ export function RoomCard({
   return (
     <Card className="shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] border-2 border-black bg-[#fef2e8] dark:bg-[#212121] overflow-hidden hover:translate-y-[-4px] transition-transform duration-200">
       {/* Room Thumbnail */}
-      <div className="relative w-full h-48 bg-gradient-to-r from-[#FFDC58] to-[#88AAEE]">
+      <div className="relative w-full h-48 bg-gradient-to-r from-[#fef2e8] to-[#Ffdc58]">
         {image ? (
           <Image 
             src={image}
@@ -50,6 +65,41 @@ export function RoomCard({
         ) : (
           <div className="flex items-center justify-center h-full">
             <span className="text-white font-bold text-2xl font-['Acme',sans-serif]">{name.charAt(0).toUpperCase()}</span>
+          </div>
+        )}
+        
+        {/* Three-dot menu for room actions */}
+        {isOwner && (
+          <div className="absolute top-2 right-2 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full bg-black/20 hover:bg-black/40 text-white">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => onEdit?.(id)}
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Room
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600"
+                  onClick={() => {
+                    if (onDelete) {
+                      setIsDeleting(true);
+                      onDelete(id);
+                    }
+                  }}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {isDeleting ? 'Deleting...' : 'Delete Room'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
@@ -81,7 +131,7 @@ export function RoomCard({
         </div>
         
         <div className="flex items-center gap-2 text-sm font-medium">
-          <FaUsers className="h-4 w-4" />
+          <Users className="h-4 w-4" />
           <span>{participantCount}/{maxUsers} participants</span>
         </div>
       </CardContent>
@@ -90,10 +140,9 @@ export function RoomCard({
         <Button 
           className="w-full border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all" 
           variant="yellow"
+          onClick={() => router.push(`/rooms/${id}`)}
         >
-          <Link href={`/room/${id}`} legacyBehavior passHref>
-            <a className="w-full">Join Room</a>
-          </Link>
+          Join Room
         </Button>
       </CardFooter>
     </Card>

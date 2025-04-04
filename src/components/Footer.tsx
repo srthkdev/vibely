@@ -3,8 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { FaGithub, FaLinkedin, FaTwitter, FaDiscord } from 'react-icons/fa'
-import { MdEmail } from 'react-icons/md'
+import { Github, Linkedin, Twitter, MessageCircle, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function Footer() {
@@ -57,33 +56,33 @@ export default function Footer() {
                                 target="_blank"
                                 className="h-10 w-10 rounded-lg flex items-center justify-center bg-white dark:bg-[#212121] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] hover:border-black transition-all"
                             >
-                                <FaGithub className="h-5 w-5" />
+                                <Github className="h-5 w-5" />
                             </Link>
                             <Link 
                                 href="https://www.linkedin.com/in/sarthak-jain-32b114228" 
                                 target="_blank"
                                 className="h-10 w-10 rounded-lg flex items-center justify-center bg-white dark:bg-[#212121] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] hover:border-black hover:bg-[#0077b5] transition-all group"
                             >
-                                <FaLinkedin className="h-5 w-5 group-hover:text-white" />
+                                <Linkedin className="h-5 w-5 group-hover:text-white" />
                             </Link>
                             <Link 
                                 href="https://x.com/sarthxk20" 
                                 target="_blank"
                                 className="h-10 w-10 rounded-lg flex items-center justify-center bg-white dark:bg-[#212121] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] hover:border-black transition-all"
                             >
-                                <FaTwitter className="h-5 w-5" />
+                                <Twitter className="h-5 w-5" />
                             </Link>
                             <button
                                 onClick={() => copyToClipboard('sarthxk20', 'Discord username')}
                                 className="h-10 w-10 rounded-lg flex items-center justify-center bg-white dark:bg-[#212121] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] hover:border-black transition-all"
                             >
-                                <FaDiscord className="h-5 w-5" />
+                                <MessageCircle className="h-5 w-5" />
                             </button>
                             <button
                                 onClick={() => copyToClipboard('23f3000839@ds.study.iitm.ac.in', 'Email')}
                                 className="h-10 w-10 rounded-lg flex items-center justify-center bg-white dark:bg-[#212121] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] hover:border-black transition-all"
                             >
-                                <MdEmail className="h-5 w-5" />
+                                <Mail className="h-5 w-5" />
                             </button>
                         </div>
                     </div>

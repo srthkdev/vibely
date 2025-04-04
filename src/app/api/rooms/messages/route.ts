@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getAuth } from "@clerk/nextjs/server"
+import { auth } from "@clerk/nextjs/server"
 import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await getAuth()
+    const { userId } = auth()
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
@@ -20,7 +20,7 @@ export async function POST(
     const message = await prisma.message.create({
       data: {
         content,
-        userId,
+        senderId: userId,
         roomId: params.id,
       },
     })

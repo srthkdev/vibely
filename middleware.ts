@@ -1,12 +1,26 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { authMiddleware } from "@clerk/nextjs";
 
-export default clerkMiddleware();
+export default authMiddleware({
+  publicRoutes: [
+    "/",
+    "/about", 
+    "/api/socket", 
+    "/rooms",
+    "/api/rooms"
+  ],
+});
 
+// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your middleware
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    "/((?!_next|.*\\..*|api|trpc|sign-in|sign-up|user-profile).*)",
-    // Optional: Protect API routes
-    "/api/((?!rooms).*)"
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/"
   ],
-}; 
+};

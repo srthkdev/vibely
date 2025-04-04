@@ -1,21 +1,30 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
 import { PrismaClient } from "@prisma/client"
+import { NextRequest } from "next/server"
 
 const prisma = new PrismaClient()
 
 export async function GET(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const id = params.id;
+    // Auth isn't required for viewing a room
+    
     const room = await prisma.room.findUnique({
       where: {
         id
       },
       include: {
         participants: true,
+        owner: {
+          select: {
+            id: true,
+            username: true,
+            clerkId: true
+          }
+        }
       }
     });
 
@@ -31,14 +40,25 @@ export async function GET(
 }
 
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = auth()
+    // Parse the request body to get userId and room data
+    const requestData = await req.json()
+    const { userId } = requestData
     
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    }
+    
+    // Find the user in our database
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    })
+    
+    if (!dbUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     const room = await prisma.room.findUnique({
@@ -49,11 +69,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Room not found" }, { status: 404 })
     }
 
-    if (room.userId !== userId) {
+    if (room.ownerId !== dbUser.id) {
       return NextResponse.json({ error: "Not authorized to update this room" }, { status: 403 })
     }
 
-    const { name, description, isPublic, maxUsers, password } = await req.json()
+    // Extract room data from the request
+    const { name, description, isPublic, maxUsers, password } = requestData
 
     const updatedRoom = await prisma.room.update({
       where: { id: params.id },
@@ -74,14 +95,25 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = auth()
+    // Get userId from URL or request body
+    const url = new URL(req.url)
+    const userIdParam = url.searchParams.get('userId')
     
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!userIdParam) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    }
+    
+    // Find the user in our database
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId: userIdParam }
+    })
+    
+    if (!dbUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     const room = await prisma.room.findUnique({
@@ -92,7 +124,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Room not found" }, { status: 404 })
     }
 
-    if (room.userId !== userId) {
+    if (room.ownerId !== dbUser.id) {
       return NextResponse.json({ error: "Not authorized to delete this room" }, { status: 403 })
     }
 

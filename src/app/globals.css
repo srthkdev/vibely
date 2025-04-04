@@ -1,5 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
 
@@ -140,43 +141,36 @@
   }
 }
 
-/* Neobrutalism utility classes */
-.neobrutalism-border {
-  border: 2px solid black;
-  box-shadow: 4px 4px 0px 0px #000000;
-}
+@layer components {
+  /* Neobrutalism utility classes */
+  .neobrutalism-border {
+    @apply border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+  }
 
-.neobrutalism-border-lg {
-  border: 3px solid black;
-  box-shadow: 8px 8px 0px 0px #000000;
-}
+  .neobrutalism-border-lg {
+    @apply border-3 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
+  }
 
-.neobrutalism-card {
-  background-color: white;
-  border: 2px solid black;
-  box-shadow: 4px 4px 0px 0px #000000;
-  border-radius: 0;
-  padding: 1rem;
-}
+  .neobrutalism-card {
+    @apply bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-none p-4;
+  }
 
-.dark .neobrutalism-card {
-  background-color: var(--dark-bg);
-}
+  .dark .neobrutalism-card {
+    @apply bg-[#212121];
+  }
 
-/* Custom button styles that can be applied independently */
-.custom-button-hover {
-  transition: all 0.2s ease;
-  transform: translate(0, 0);
-}
+  /* Custom button styles */
+  .custom-button-hover {
+    @apply transition-all duration-200 ease-in-out transform translate-x-0 translate-y-0;
+  }
 
-.custom-button-hover:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px 0px #000000;
-}
+  .custom-button-hover:hover {
+    @apply -translate-x-0.5 -translate-y-0.5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
+  }
 
-.custom-button-hover:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px 0px #000000;
+  .custom-button-hover:active {
+    @apply translate-x-0.5 translate-y-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  }
 }
 
 /* Word animation styles removed as we're using React state-based animation now */

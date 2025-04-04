@@ -50,11 +50,14 @@ model RoomParticipant {
 }
 
 model Message {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   content   String
-  createdAt DateTime  @default(now())
-  userId    String
+  timestamp DateTime @default(now())
   roomId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId  String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([senderId])
 }

@@ -121,14 +121,14 @@ export default function HomePage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
                                         transition={{ duration: 0.3 }}
-                                        style={{ color: colors[currentWord] }}
+                                        style={{ color: colors[currentWord], fontFamily: 'Acme, sans-serif'}}
                                     >
                                         {words[currentWord]}
                                     </motion.span>
                                 </AnimatePresence>
                                 
                             </div>
-                            <div className="mt-2">
+                            <div className="mt-2 font-['Acme',sans-serif]">
                                 Your Perfect Space in Vibely Rooms
                             </div>
                         </motion.h1>

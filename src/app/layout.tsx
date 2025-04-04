@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/nextjs"
+import ClerkProvider from "@/components/providers/clerk-provider"
 import { Heebo, Acme } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import QueryProvider from "@/components/providers/query-provider"
@@ -41,15 +41,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClerkProvider 
-            appearance={{
-              baseTheme: undefined,
-              elements: {
-                formButtonPrimary: 'bg-primary hover:bg-primary/90',
-                footerActionLink: 'text-primary hover:text-primary/90'
-              }
-            }}
-          >
+          <ClerkProvider>
             <QueryProvider>
               <NavBar />
               {children}

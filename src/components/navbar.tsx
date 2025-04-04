@@ -66,12 +66,14 @@ const NavBar = () => {
                 <div
                     className={twMerge(
                         `mx-auto mt-4 flex h-[80px] w-full max-w-screen-xl
-                        items-center justify-between px-6 transition-transform
-                        duration-300 ease-in-out bg-white dark:bg-[#212121] transform
-                        border-3 border-black
-                        shadow-[8px_8px_0px_0px_#000] `,
+        items-center justify-between px-6 transition-transform
+        duration-300 ease-in-out bg-white dark:bg-[#212121] transform `,
                         showNav ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'
                     )}
+                    style={{
+                        border: '3px solid black',
+                        boxShadow: '8px 8px 0px 0px #000000',
+                    }}
                 >
                     {/* Logo */}
                     <h1 className="text-3xl font-black tracking-tight
