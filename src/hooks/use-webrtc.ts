@@ -1,248 +1,404 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { WebRTCConnection, DEFAULT_CONFIG } from '@/lib/webrtc';
-import * as socketService from '@/lib/socket';
-import { useAuth } from '@clerk/nextjs';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { WebRTCClient, Participant, WebRTCState } from '@/lib/webrtc';
 
-export interface WebRTCState {
-  localStream: MediaStream | null;
-  remoteStreams: Map<string, MediaStream>;
-  isMuted: boolean;
-  isVideoOff: boolean;
-  isDeafened: boolean;
+// Add a stable unique key for the room to prevent rapid mounts/unmounts
+interface RoomIdentifier {
+  roomId: string;
+  instanceId: string;
 }
 
-export function useWebRTC(roomId: string) {
-  const { userId } = useAuth();
+let stableRoomRef: RoomIdentifier | null = null;
+let pendingConnections = new Map<string, NodeJS.Timeout>();
+
+// Constants
+const CONNECTION_STABILIZATION_TIME = 3000; // 3 seconds
+const RECONNECT_DELAY = 2000; // 2 seconds
+const MOUNT_DEBOUNCE_TIME = 1000; // 1 second
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  
+  return function(...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}
+
+export function useWebRTC(
+  roomId: string,
+  userId: string,
+  userName: string,
+  userImage: string = '',
+  isAdmin: boolean = false
+) {
+  // Client reference to avoid recreating on rerenders
+  const webrtcClientRef = useRef<WebRTCClient | null>(null);
+  const reconnectAttempts = useRef<number>(0);
+  const maxReconnectAttempts = 3;
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountInstanceIdRef = useRef<string>(`${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+  
+  // State for participants and streams
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [initError, setInitError] = useState<Error | null>(null);
+  
+  // WebRTC state
   const [state, setState] = useState<WebRTCState>({
-    localStream: null,
-    remoteStreams: new Map(),
+    isConnected: false,
     isMuted: false,
     isVideoOff: false,
-    isDeafened: false
+    isDeafened: false,
+    isChatVisible: false,
+    isAdmin: isAdmin
   });
-  const peerConnections = useRef<Map<string, WebRTCConnection>>(new Map());
-  const socket = useRef<ReturnType<typeof socketService.initializeSocket> | null>(null);
-
-  // Initialize WebRTC and socket connection
+  
+  // Initialize WebRTC client
   useEffect(() => {
-    if (!userId || !roomId) return;
-
-    // Initialize socket
-    socket.current = socketService.initializeSocket(roomId, userId);
-    socketService.joinRoom(roomId);
-
-    // Setup socket event listeners
-    socketService.onUserJoined(({ userId: peerId }) => {
-      if (peerId !== userId) {
-        createPeerConnection(peerId, true);
-      }
-    });
-
-    socketService.onUserLeft(({ userId: peerId }) => {
-      closePeerConnection(peerId);
-    });
-
-    socketService.onSignal(({ from, signal }) => {
-      handleSignal(from, signal);
-    });
-
-    // Initialize local stream
-    const initLocalStream = async () => {
+    const instance = mountInstanceIdRef.current;
+    console.log(`Initializing WebRTC client for roomId: ${roomId} userId: ${userId} (instance: ${instance})`);
+    
+    // Skip if essential params are missing
+    if (!roomId || !userId) return;
+    
+    // If client exists and has same parameters, skip
+    if (webrtcClientRef.current 
+        && webrtcClientRef.current.getRoomId() === roomId 
+        && webrtcClientRef.current.getUserId() === userId) {
+      console.log('Client exists with same params. Skipping effect run.');
+      return;
+    }
+    
+    // Cleanup previous client if it exists
+    if (webrtcClientRef.current) {
+      console.log('Disconnecting previous WebRTC client');
+      webrtcClientRef.current.disconnect();
+      webrtcClientRef.current = null;
+    }
+    
+    // Reset state
+    setIsInitialized(false);
+    setInitError(null);
+    reconnectAttempts.current = 0;
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    // Initialize new client
+    const initClient = async () => {
       try {
-        const mainConnection = new WebRTCConnection(DEFAULT_CONFIG);
-        const stream = await mainConnection.getLocalStream();
-        setState(prev => ({ ...prev, localStream: stream }));
+        // Create new client
+        const client = new WebRTCClient({
+          roomId,
+          userId,
+          userName,
+          userImage,
+          isAdmin
+        });
+        webrtcClientRef.current = client;
+        
+        // Set up event listeners
+        client.on('participants-updated', (newParticipants: Participant[]) => {
+          console.log('Participants updated:', userId);
+          setParticipants(newParticipants);
+        });
+        
+        client.on('state-changed', (newState: WebRTCState) => {
+          setState(prev => ({...prev, ...newState}));
+        });
+        
+        client.on('remote-streams-updated', (streams: Map<string, MediaStream>) => {
+          console.log('Remote streams updated, count:', streams.size);
+          setRemoteStreams(new Map(streams));
+        });
+        
+        client.on('local-stream-updated', (stream: MediaStream) => {
+          console.log('Local stream updated:', stream.id);
+          setLocalStream(stream);
+        });
+        
+        client.on('error', (error: Error) => {
+          console.error('WebRTC client error:', error);
+          if (error.message.includes('getUserMedia') || 
+              error.message.includes('NotAllowedError') ||
+              error.name === 'NotAllowedError' ||
+              error.name === 'NotFoundError') {
+            // Media access errors
+            setInitError(error);
+          } else if (!isInitialized) {
+            // Only update error state if we're not initialized
+            setInitError(error);
+          }
+        });
+        
+        client.on('kicked', () => {
+          console.log('User kicked from room');
+          // Disconnect client
+          if (webrtcClientRef.current) {
+            webrtcClientRef.current.disconnect();
+            webrtcClientRef.current = null;
+            setIsInitialized(false);
+          }
+        });
+        
+        client.on('room-deleted', () => {
+          console.log('Room was deleted');
+          // Disconnect client
+          if (webrtcClientRef.current) {
+            webrtcClientRef.current.disconnect();
+            webrtcClientRef.current = null;
+            setIsInitialized(false);
+          }
+        });
+        
+        // Initialize the client
+        const success = await client.initialize({
+          userId,
+          userName,
+          userImage,
+          isAdmin,
+          roomId,
+          enableAudio: true,
+          enableVideo: true
+        });
+        
+        if (success) {
+          console.log('WebRTC client initialized successfully');
+          setIsInitialized(true);
+          setInitError(null);
+          
+          // Get initial state
+          setLocalStream(client.getLocalStream());
+          setState(client.getState());
+        } else {
+          console.error('Failed to initialize WebRTC client');
+          setIsInitialized(false);
+          // Error should be set by the error handler
+        }
       } catch (error) {
-        console.error('Error getting local stream:', error);
+        console.error('Error in WebRTC initialization:', error);
+        setInitError(error instanceof Error ? error : new Error('Initialization failed'));
+        setIsInitialized(false);
+        
+        // If we have reconnect attempts left, try again after a delay
+        if (reconnectAttempts.current < maxReconnectAttempts) {
+          reconnectAttempts.current++;
+          console.log(`Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts} in 3 seconds...`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            initClient();
+          }, 3000);
+        }
       }
     };
-
-    initLocalStream();
-
+    
+    // Start initialization
+    initClient();
+    
     // Cleanup
     return () => {
-      cleanupConnections();
-      socketService.leaveRoom(roomId);
-      socketService.closeSocket();
-    };
-  }, [userId, roomId]);
-
-  // Create a peer connection for a new user
-  const createPeerConnection = async (peerId: string, isInitiator: boolean) => {
-    if (peerConnections.current.has(peerId)) return;
-
-    const connection = new WebRTCConnection(DEFAULT_CONFIG);
-    peerConnections.current.set(peerId, connection);
-
-    // Handle local stream
-    if (state.localStream) {
-      state.localStream.getTracks().forEach(track => {
-        if (state.localStream) {
-          connection['peerConnection']?.addTrack(track, state.localStream);
-        }
-      });
-    } else {
-      try {
-        const stream = await connection.getLocalStream();
-        setState(prev => ({ ...prev, localStream: stream }));
-        connection.addLocalStreamTracks();
-      } catch (error) {
-        console.error('Error getting local stream:', error);
-        return;
+      console.log(`Running cleanup for WebRTC client effect (instance: ${instance})`);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
-    }
-
-    // Set remote stream handler
-    connection.setOnRemoteStream((stream) => {
-      setState(prev => {
-        const newRemoteStreams = new Map(prev.remoteStreams);
-        newRemoteStreams.set(peerId, stream);
-        return { ...prev, remoteStreams: newRemoteStreams };
-      });
-    });
-
-    // Set ICE candidate handler
-    connection.setOnIceCandidate((candidate) => {
-      if (candidate) {
-        socketService.sendSignal(peerId, {
-          type: 'ice-candidate',
-          payload: candidate
-        });
-      }
-    });
-
-    // Initiate connection if we're the initiator
-    if (isInitiator) {
-      try {
-        const offer = await connection.createOffer();
-        socketService.sendSignal(peerId, {
-          type: 'offer',
-          payload: offer
-        });
-      } catch (error) {
-        console.error('Error creating offer:', error);
-      }
-    }
-
-    return connection;
-  };
-
-  // Handle incoming signals
-  const handleSignal = async (from: string, signal: any) => {
-    let connection = peerConnections.current.get(from);
-    
-    if (!connection) {
-      connection = await createPeerConnection(from, false);
-      if (!connection) return;
-    }
-
-    switch (signal.type) {
-      case 'offer':
-        try {
-          await connection.setRemoteDescription(signal.payload);
-          const answer = await connection.createAnswer();
-          socketService.sendSignal(from, {
-            type: 'answer',
-            payload: answer
-          });
-        } catch (error) {
-          console.error('Error handling offer:', error);
-        }
-        break;
-        
-      case 'answer':
-        try {
-          await connection.setRemoteDescription(signal.payload);
-        } catch (error) {
-          console.error('Error handling answer:', error);
-        }
-        break;
-        
-      case 'ice-candidate':
-        try {
-          await connection.addIceCandidate(signal.payload);
-        } catch (error) {
-          console.error('Error adding ICE candidate:', error);
-        }
-        break;
-    }
-  };
-
-  // Close a peer connection
-  const closePeerConnection = (peerId: string) => {
-    const connection = peerConnections.current.get(peerId);
-    if (connection) {
-      connection.close();
-      peerConnections.current.delete(peerId);
       
-      setState(prev => {
-        const newRemoteStreams = new Map(prev.remoteStreams);
-        newRemoteStreams.delete(peerId);
-        return { ...prev, remoteStreams: newRemoteStreams };
+      if (webrtcClientRef.current) {
+        console.log('Disconnecting WebRTC client on unmount');
+        webrtcClientRef.current.disconnect();
+        webrtcClientRef.current = null;
+      }
+    };
+  }, [roomId, userId, userName, userImage, isAdmin]);
+  
+  // Function to attempt reconnection
+  const attemptReconnect = useCallback(() => {
+    console.log('Attempting to reconnect WebRTC client...');
+    setInitError(null);
+    reconnectAttempts.current = 0;
+    
+    if (webrtcClientRef.current) {
+      webrtcClientRef.current.disconnect();
+      
+      // Short delay before reconnecting to ensure clean state
+      setTimeout(async () => {
+        try {
+          const success = await webrtcClientRef.current?.initialize({
+            userId,
+            userName,
+            userImage,
+            isAdmin,
+            roomId,
+            enableAudio: !state.isMuted,
+            enableVideo: !state.isVideoOff
+          });
+          
+          if (success) {
+            console.log('WebRTC client reconnected successfully');
+            setIsInitialized(true);
+            setInitError(null);
+          } else {
+            console.error('Failed to reconnect WebRTC client');
+            setIsInitialized(false);
+            reconnectAttempts.current++;
+            
+            if (reconnectAttempts.current >= maxReconnectAttempts) {
+              setInitError(new Error(`Failed after ${maxReconnectAttempts} reconnection attempts`));
+            }
+          }
+        } catch (error) {
+          console.error('Error in WebRTC reconnection:', error);
+          setInitError(error instanceof Error ? error : new Error('Reconnection failed'));
+          setIsInitialized(false);
+          reconnectAttempts.current++;
+        }
+      }, 1000);
+    } else {
+      // Client doesn't exist, recreate it
+      const client = new WebRTCClient({
+        roomId,
+        userId,
+        userName,
+        userImage,
+        isAdmin
       });
+      webrtcClientRef.current = client;
+      
+      client.on('participants-updated', (newParticipants: Participant[]) => {
+        setParticipants(newParticipants);
+      });
+      
+      client.on('state-changed', (newState: WebRTCState) => {
+        setState(prev => ({...prev, ...newState}));
+      });
+      
+      client.on('remote-streams-updated', (streams: Map<string, MediaStream>) => {
+        setRemoteStreams(new Map(streams));
+      });
+      
+      client.on('local-stream-updated', (stream: MediaStream) => {
+        setLocalStream(stream);
+      });
+      
+      client.on('error', (error: Error) => {
+        console.error('WebRTC client error during reconnect:', error);
+        setInitError(error);
+      });
+      
+      // Initialize with a short delay
+      setTimeout(async () => {
+        try {
+          const success = await client.initialize({
+            userId,
+            userName,
+            userImage,
+            isAdmin,
+            roomId,
+            enableAudio: !state.isMuted,
+            enableVideo: !state.isVideoOff
+          });
+          
+          if (success) {
+            console.log('WebRTC client initialized successfully after reconnect');
+            setIsInitialized(true);
+            setInitError(null);
+          } else {
+            console.error('Failed to initialize WebRTC client after reconnect');
+            reconnectAttempts.current++;
+            
+            if (reconnectAttempts.current >= maxReconnectAttempts) {
+              setInitError(new Error(`Failed after ${maxReconnectAttempts} reconnection attempts`));
+            }
+          }
+        } catch (error) {
+          console.error('Error in WebRTC reconnection:', error);
+          setInitError(error instanceof Error ? error : new Error('Reconnection failed'));
+          reconnectAttempts.current++;
+        }
+      }, 1000);
     }
-  };
+  }, [roomId, userId, userName, userImage, isAdmin, state.isMuted, state.isVideoOff]);
 
-  // Clean up all connections
-  const cleanupConnections = () => {
-    peerConnections.current.forEach(connection => {
-      connection.close();
-    });
-    peerConnections.current.clear();
-    
-    if (state.localStream) {
-      state.localStream.getTracks().forEach(track => track.stop());
-    }
-    
-    setState(prev => ({
-      ...prev,
-      localStream: null,
-      remoteStreams: new Map()
-    }));
-  };
+  // Function to get a remote stream for a participant
+  const getRemoteStream = useCallback((participantId: string): MediaStream | null => {
+    if (!webrtcClientRef.current) return null;
+    return remoteStreams.get(participantId) || null;
+  }, [remoteStreams]);
 
-  // Toggle audio
-  const toggleMute = () => {
-    if (!state.localStream) return;
-    
-    const newIsMuted = !state.isMuted;
-    state.localStream.getAudioTracks().forEach(track => {
-      track.enabled = !newIsMuted;
-    });
-    
-    setState(prev => ({ ...prev, isMuted: newIsMuted }));
-  };
+  // Chat functionality
+  const sendMessage = useCallback((message: string) => {
+    if (!webrtcClientRef.current || !isInitialized) return;
+    webrtcClientRef.current.sendMessage(message);
+  }, [isInitialized]);
 
-  // Toggle video
-  const toggleVideo = () => {
-    if (!state.localStream) return;
-    
-    const newIsVideoOff = !state.isVideoOff;
-    state.localStream.getVideoTracks().forEach(track => {
-      track.enabled = !newIsVideoOff;
-    });
-    
-    setState(prev => ({ ...prev, isVideoOff: newIsVideoOff }));
-  };
+  // Media control functions
+  const toggleMute = useCallback(() => {
+    if (!webrtcClientRef.current) return;
+    webrtcClientRef.current.toggleMute();
+  }, []);
 
-  // Toggle audio output (deafening)
-  const toggleDeafen = () => {
-    const newIsDeafened = !state.isDeafened;
-    
-    // This requires browser audio output devices API
-    // For now, we'll just update the state
-    setState(prev => ({ ...prev, isDeafened: newIsDeafened }));
-    
-    // In a real implementation, we would mute all audio elements
-    // or use the browser's audio output devices API
-  };
+  const toggleVideo = useCallback(() => {
+    if (!webrtcClientRef.current) return;
+    webrtcClientRef.current.toggleVideo();
+  }, []);
+
+  const toggleDeafen = useCallback(() => {
+    if (!webrtcClientRef.current) return;
+    webrtcClientRef.current.toggleDeafen();
+  }, []);
+
+  const toggleChat = useCallback(() => {
+    if (!webrtcClientRef.current) return;
+    webrtcClientRef.current.toggleChat();
+  }, []);
+
+  // Admin control functions
+  const muteParticipant = useCallback((participantId: string) => {
+    if (!webrtcClientRef.current || !state.isAdmin) return;
+    webrtcClientRef.current.muteParticipant(participantId);
+  }, [state.isAdmin]);
+
+  const disableParticipantVideo = useCallback((participantId: string) => {
+    if (!webrtcClientRef.current || !state.isAdmin) return;
+    webrtcClientRef.current.disableParticipantVideo(participantId);
+  }, [state.isAdmin]);
+
+  const kickParticipant = useCallback((participantId: string) => {
+    if (!webrtcClientRef.current || !state.isAdmin) return;
+    webrtcClientRef.current.kickParticipant(participantId);
+  }, [state.isAdmin]);
+
+  const deleteRoom = useCallback(() => {
+    if (!webrtcClientRef.current || !state.isAdmin) return;
+    webrtcClientRef.current.deleteRoom();
+  }, [state.isAdmin]);
 
   return {
-    ...state,
+    localStream,
+    participants,
+    state,
+    isInitialized,
+    initError,
     toggleMute,
     toggleVideo,
-    toggleDeafen
+    toggleDeafen,
+    toggleChat,
+    muteParticipant,
+    disableParticipantVideo,
+    kickParticipant,
+    deleteRoom,
+    sendMessage,
+    getRemoteStream,
+    attemptReconnect,
+    webrtcClient: webrtcClientRef.current
   };
 } 

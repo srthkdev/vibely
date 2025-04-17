@@ -1,4 +1,3 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,42 +8,42 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  clerkId       String    @unique
-  username      String    @unique
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  ownedRooms    Room[]    @relation("RoomOwner")
+  id             String            @id @default(cuid())
+  clerkId        String            @unique
+  username       String            @unique
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  messages       Message[]
+  ownedRooms     Room[]            @relation("RoomOwner")
   participations RoomParticipant[]
-  messages      Message[]
 }
 
 model Room {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  isPublic    Boolean   @default(true)
-  maxUsers    Int       @default(10)
-  password    String?
-  topics      String[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  ownerId     String
-  owner       User      @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  id           String            @id @default(cuid())
+  name         String
+  description  String?
+  isPublic     Boolean           @default(true)
+  maxUsers     Int               @default(10)
+  password     String?
+  topics       String[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  ownerId      String
+  messages     Message[]
+  owner        User              @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   participants RoomParticipant[]
-  messages    Message[]
 }
 
 model RoomParticipant {
-  id        String    @id @default(cuid())
-  userId    String
-  roomId    String
-  isMuted   Boolean   @default(false)
-  isDeafen  Boolean   @default(false)
-  hasVideo  Boolean   @default(true)
-  joinedAt  DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  userId   String
+  roomId   String
+  isMuted  Boolean  @default(false)
+  isDeafen Boolean  @default(false)
+  hasVideo Boolean  @default(true)
+  joinedAt DateTime @default(now())
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roomId])
 }
@@ -52,9 +51,9 @@ model RoomParticipant {
 model Message {
   id        String   @id @default(cuid())
   content   String
-  timestamp DateTime @default(now())
   roomId    String
   senderId  String
+  timestamp DateTime @default(now())
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 

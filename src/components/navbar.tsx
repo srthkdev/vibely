@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { twMerge } from 'tailwind-merge'
 import { motion } from 'framer-motion'
 import { ThemeSwitcher } from './theme-switcher'
@@ -15,13 +16,21 @@ const scrolltoHash = function (element_id: string) {
 }
 
 const NavBar = () => {
+    const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
     const [showNav, setShowNav] = useState(true)
     const [lastScrollY, setLastScrollY] = useState(0)
     const menuRef = useRef<HTMLDivElement>(null)
     const { isSignedIn } = useAuth()
+    
+    // IMPORTANT: Don't return early before all hooks are used
+    // Instead, store the result in a variable
+    const shouldHideNavbar = pathname && pathname.includes('/rooms/') && pathname !== '/rooms';
 
     useEffect(() => {
+        // Skip effect if navbar should be hidden
+        if (shouldHideNavbar) return;
+        
         const handleScroll = () => {
             const currentScrollY = window.scrollY
             if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -45,7 +54,7 @@ const NavBar = () => {
             window.removeEventListener('scroll', handleScroll)
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [lastScrollY])
+    }, [lastScrollY, shouldHideNavbar])
 
     const navbarVariants = {
         hidden: { y: '-120%' },
@@ -53,6 +62,11 @@ const NavBar = () => {
             y: 0,
             transition: { duration: 0.5, delay: 0.2 }
         },
+    }
+
+    // Now return null after all hooks have been called
+    if (shouldHideNavbar) {
+        return null;
     }
 
     return (

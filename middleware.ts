@@ -1,26 +1,34 @@
+import { NextResponse } from 'next/server';
 import { authMiddleware } from "@clerk/nextjs";
 
+// Default export for Clerk's auth middleware
 export default authMiddleware({
+  // Public routes that don't require authentication
   publicRoutes: [
     "/",
     "/about", 
     "/api/socket", 
-    "/rooms",
-    "/api/rooms"
+    "/api/webhook",
+    "/rooms"  // Allow browsing rooms without auth
   ],
+  // Redirect unauthenticated users trying to access protected routes
+  afterAuth(auth, req) {
+    // If the user is not authenticated and trying to access a room
+    if (!auth.userId && req.nextUrl.pathname.startsWith('/rooms/')) {
+      return NextResponse.redirect(new URL('/signup', req.url));
+    }
+    return NextResponse.next();
+  }
 });
 
-// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your middleware
+// Configure Clerk to apply this middleware to all routes including API routes
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-    "/"
-  ],
+    // Match all pages
+    "/((?!.*\\..*|_next).*)",
+    // Match API routes
+    "/api/:path*",
+    // Skip static files
+    "/((?!_next/static|_next/image|favicon.ico).*)"
+  ]
 };

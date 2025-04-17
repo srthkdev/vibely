@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,9 @@ import { RoomCard } from "@/components/room-card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import io from "socket.io-client"
+import { useUser } from "@clerk/nextjs"
+import { toast } from "sonner"
 
 interface Room {
   id: string
@@ -19,6 +22,7 @@ interface Room {
   maxUsers: number
   isPublic: boolean
   image?: string | null
+  ownerId?: string
 }
 
 export default function RoomsPage() {
@@ -27,25 +31,117 @@ export default function RoomsPage() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
+  const [socketConnected, setSocketConnected] = useState(false)
+  const socketRef = useRef<any>(null)
+  const { user } = useUser()
+
+  // Initialize socket connection
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    console.log('Initializing socket connection for rooms page');
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+      path: '/api/socket',
+      addTrailingSlash: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000,
+    });
+    
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('Room management socket connected');
+      setSocketConnected(true);
+      
+      // Join a special room for real-time room updates
+      socket.emit('join-room-management');
+    });
+
+    socket.on('rooms-updated', () => {
+      console.log('Received rooms-updated event, refreshing rooms');
+      fetchRooms();
+    });
+
+    socket.on('room-participant-count', ({ roomId, count }) => {
+      console.log(`Room ${roomId} participant count updated to ${count}`);
+      setRooms(prevRooms => 
+        prevRooms.map(room => 
+          room.id === roomId ? { ...room, participantCount: count } : room
+        )
+      );
+    });
+
+    socket.on('room-deleted', ({ roomId }) => {
+      console.log(`Room ${roomId} has been deleted`);
+      setRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setSocketConnected(false);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected');
+      setSocketConnected(false);
+    });
+
+    return () => {
+      console.log('Cleaning up socket connection');
+      socket.disconnect();
+    };
+  }, []);
 
   // Fetch rooms from the API
-  useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const response = await fetch(`/api/rooms?query=${searchQuery}`)
-        if (response.ok) {
-          const data = await response.json()
-          setRooms(data)
-        }
-      } catch (error) {
-        console.error("Error fetching rooms:", error)
-      } finally {
-        setLoading(false)
+  const fetchRooms = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/rooms?query=${searchQuery}`)
+      if (response.ok) {
+        const data = await response.json()
+        setRooms(data)
       }
+    } catch (error) {
+      console.error("Error fetching rooms:", error)
+    } finally {
+      setLoading(false)
+    }
+  };
+
+  useEffect(() => {
+    fetchRooms()
+  }, [searchQuery]);
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!user) {
+      return;
     }
 
-    fetchRooms()
-  }, [searchQuery])
+    try {
+      const response = await fetch(`/api/rooms/${roomId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Remove room from local state
+        setRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
+        
+        // Emit room-deleted event to all clients
+        if (socketRef.current) {
+          socketRef.current.emit('room-deleted', { roomId });
+        }
+        
+        toast.success('Room deleted successfully');
+      } else {
+        throw new Error('Failed to delete room');
+      }
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      toast.error('Failed to delete room');
+    }
+  };
 
   // Get all unique topics from rooms
   const allTopics = Array.from(
@@ -164,7 +260,13 @@ export default function RoomsPage() {
               {filteredRooms.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredRooms.map((room) => (
-                    <RoomCard key={room.id} {...room} />
+                    <RoomCard 
+                      key={room.id} 
+                      {...room} 
+                      isOwner={user?.id === room.ownerId}
+                      onDelete={handleDeleteRoom}
+                      onEdit={(id) => router.push(`/rooms/edit/${id}`)}
+                    />
                   ))}
                 </div>
               ) : (

@@ -66,3 +66,20 @@ export interface MediasoupState {
   isChatVisible: boolean;
   isAdmin: boolean;
 }
+
+// Add new connection diagnostics interfaces
+export interface ConnectionStatus {
+  isConnected: boolean;
+  lastConnectAttempt: number;
+  lastDisconnectTime?: number;
+  disconnectReason?: string;
+  reconnectAttempts: number;
+  maxReconnectAttempts: number;
+}
+
+export interface ConnectionWarning {
+  type: 'device' | 'network' | 'media' | 'general';
+  message: string;
+  error?: Error;
+  timestamp: number;
+}
