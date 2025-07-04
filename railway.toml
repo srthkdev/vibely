@@ -12,4 +12,10 @@ restartPolicyMaxRetries = 3
 NODE_ENV = "production"
 
 [phases.setup]
-nixPkgs = ["nodejs", "npm"] 
+nixPkgs = ["nodejs", "npm"]
+
+[phases.install]
+cmds = ["npm ci --legacy-peer-deps"]
+
+[phases.build]
+cmds = ["npm run build"] 
