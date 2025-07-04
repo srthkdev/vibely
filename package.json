@@ -8,13 +8,12 @@
   },
   "scripts": {
     "dev": "concurrently \"npm run next dev\" \"npm run server\"",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "start:prod": "node server-combined.js",
     "start:dev": "concurrently \"npm run next dev\" \"npm run server\"",
     "server": "node server.js",
     "lint": "next lint",
-    "postinstall": "prisma generate",
     "setup-db": "node scripts/setup-db.js",
     "db:push": "prisma db push",
     "db:generate": "prisma generate"

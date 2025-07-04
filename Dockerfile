@@ -2,7 +2,7 @@
 FROM node:18-alpine
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ openssl
 
 # Set working directory
 WORKDIR /app
@@ -11,14 +11,14 @@ WORKDIR /app
 COPY package*.json ./
 COPY .npmrc ./
 
+# Copy Prisma schema before installing dependencies
+COPY prisma ./prisma/
+
 # Install dependencies with legacy peer deps
 RUN npm ci --legacy-peer-deps
 
-# Copy source code
+# Copy remaining source code
 COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
 
 # Build the application
 RUN npm run build
