@@ -1,5 +1,5 @@
-[build]
-builder = "DOCKERFILE"
+# [build]
+# builder = "DOCKERFILE"
 
 [deploy]
 startCommand = "npm run start:prod"
