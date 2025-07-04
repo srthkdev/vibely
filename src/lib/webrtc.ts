@@ -85,7 +85,7 @@ export class WebRTCClient extends EventEmitter {
     };
     
     // Initialize socket with parameters
-    this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+    this.socket = io(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', {
       path: '/api/socket',
       auth: {
         userId: this.userId,

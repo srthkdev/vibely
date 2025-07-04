@@ -34,7 +34,7 @@ export default function RoomsPage() {
     if (typeof window === 'undefined' || !user?.id) return;
 
     console.log('Initializing socket connection for rooms page');
-    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+    const socket = io(process.env.NEXT_PUBLIC_APP_URL!, {
       path: '/api/socket',
       addTrailingSlash: false,
       reconnection: true,

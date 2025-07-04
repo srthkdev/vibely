@@ -182,7 +182,17 @@ Room owners have additional controls:
 
 ## 🌐 Production Deployment
 
-For production deployment:
+### 🚀 Railway Deployment (Recommended)
+
+This project is optimized for Railway deployment with a combined server that runs both Next.js and Socket.IO on the same port.
+
+**Quick Deploy:**
+1. Fork this repository
+2. Connect to [Railway](https://railway.app/)
+3. Set environment variables
+4. Deploy automatically
+
+**📖 See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for detailed instructions.**
 
 ### Environment Variables for Production
 
@@ -194,9 +204,8 @@ CLERK_SECRET_KEY=sk_live_xxxx
 # Production NeonDB
 DATABASE_URL="postgresql://username:password@ep-xxx-xxx.region.aws.neon.tech/prod_database?sslmode=require"
 
-# Production URLs
-NEXT_PUBLIC_SOCKET_URL="https://your-domain.com"
-NEXT_PUBLIC_APP_URL="https://your-domain.com"
+# Production URL (Railway will provide this)
+NEXT_PUBLIC_APP_URL="https://your-app-name.railway.app"
 
 # Optional: STUN/TURN servers for better WebRTC connectivity
 NEXT_PUBLIC_STUN_SERVERS="stun:stun.l.google.com:19302"
@@ -205,19 +214,24 @@ NEXT_PUBLIC_TURN_USERNAME="your_turn_username"
 NEXT_PUBLIC_TURN_CREDENTIAL="your_turn_credential"
 ```
 
-### Deployment Steps
+### Alternative Deployment Options
 
-1. **Database**: Ensure your NeonDB is set up and accessible
-2. **Environment**: Configure all production environment variables
-3. **Build**: Run `npm run build` to create production build
-4. **Deploy**: Deploy to your preferred platform (Vercel, Netlify, etc.)
-5. **Socket.IO Server**: Deploy the Socket.IO server separately or use a service
+#### Vercel + Separate Socket.IO Server
+- **Frontend**: Deploy to Vercel
+- **Socket.IO Server**: Deploy `server.js` to Railway/Render
+- **Database**: NeonDB
+
+#### Traditional VPS
+- Deploy the combined server to any VPS
+- Use PM2 or similar for process management
+- Set up reverse proxy (nginx) if needed
 
 ### Recommended Platforms
 
-- **Frontend**: Vercel, Netlify, or Railway
-- **Socket.IO Server**: Railway, Render, or DigitalOcean
-- **Database**: NeonDB (already serverless)
+- **Full Stack**: Railway (recommended)
+- **Frontend Only**: Vercel, Netlify
+- **Socket.IO Server**: Railway, Render, DigitalOcean
+- **Database**: NeonDB (serverless PostgreSQL)
 
 ## 🤝 Contributing
 

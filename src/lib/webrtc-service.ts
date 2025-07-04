@@ -133,7 +133,7 @@ class WebRTCService {
       }
       
       // Create new socket connection
-      this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+      this.socket = io(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', {
         path: '/api/socket',
         auth: {
           userId: this.userId,
