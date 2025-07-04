@@ -57,8 +57,8 @@ export interface Message {
   };
 }
 
-// Mediasoup types
-export interface MediasoupState {
+// WebRTC state types
+export interface WebRTCState {
   isConnected: boolean;
   isMuted: boolean;
   isVideoOff: boolean;

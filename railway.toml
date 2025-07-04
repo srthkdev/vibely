@@ -1,5 +1,5 @@
 [build]
-builder = "nixpacks"
+builder = "DOCKERFILE"
 
 [deploy]
 startCommand = "npm run start:prod"
@@ -9,13 +9,4 @@ restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 [env]
-NODE_ENV = "production"
-
-[phases.setup]
-nixPkgs = ["nodejs", "npm"]
-
-[phases.install]
-cmds = ["npm ci --legacy-peer-deps"]
-
-[phases.build]
-cmds = ["npm run build"] 
+NODE_ENV = "production" 
