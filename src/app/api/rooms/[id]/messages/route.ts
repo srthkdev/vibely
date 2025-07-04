@@ -1,107 +1,90 @@
 import { NextResponse } from "next/server"
-import { auth, currentUser } from "@clerk/nextjs"
 import { PrismaClient } from "@prisma/client"
+import { getAuth } from "@clerk/nextjs/server"
+import type { NextRequest } from "next/server"
 
 const prisma = new PrismaClient()
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// Get messages for a room
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    // Try both auth methods to ensure compatibility
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult.userId;
-    } catch (authError) {
-      console.error("Auth error:", authError);
-      // Try alternative auth method
-      const user = await currentUser();
-      userId = user?.id;
-    }
-
-    // If not authenticated, return empty messages array instead of error
-    // This prevents breaking the UI when auth is still resolving
-    if (!userId) {
-      console.warn("User not authenticated, returning empty messages array");
-      return NextResponse.json([]);
-    }
-
+    const roomId = params.id
     const messages = await prisma.message.findMany({
-      where: {
-        roomId: params.id,
-      },
-      orderBy: {
-        timestamp: "asc", // Order by timestamp
-      },
+      where: { roomId },
       include: {
-        sender: {
+        author: {
           select: {
             id: true,
-            username: true,
             clerkId: true,
-          },
-        },
+            username: true,
+          }
+        }
       },
+      orderBy: { createdAt: 'asc' },
+      take: 100, // Limit to last 100 messages
     })
 
-    // Transform to expected format by the client
     const formattedMessages = messages.map(message => ({
       id: message.id,
       content: message.content,
-      timestamp: message.timestamp.toISOString(),
-      sender: {
-        id: message.sender.clerkId,
-        name: message.sender.username || 'Anonymous',
-      }
-    }));
+      timestamp: message.createdAt,
+      senderId: message.author.clerkId,
+      senderName: message.author.username,
+    }))
 
     return NextResponse.json(formattedMessages)
   } catch (error) {
     console.error("Error fetching messages:", error)
-    // Return empty array instead of error to prevent UI from breaking
-    return NextResponse.json([])
+    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 })
   }
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// Create a new message
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { userId } = await auth()
+    const { userId } = getAuth(req)
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { content } = body
+    const roomId = params.id
+    const { content } = await req.json()
 
-    if (!content) {
-      return new NextResponse("Content is required", { status: 400 })
+    const user = await prisma.user.findUnique({ where: { clerkId: userId }})
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     const message = await prisma.message.create({
       data: {
         content,
-        roomId: params.id,
-        senderId: userId,
+        roomId,
+        authorId: user.id,
       },
       include: {
-        sender: {
+        author: {
           select: {
             id: true,
-            username: true,
             clerkId: true,
-          },
-        },
-      },
+            username: true,
+          }
+        }
+      }
     })
 
-    return NextResponse.json(message)
+    const formattedMessage = {
+      id: message.id,
+      content: message.content,
+      timestamp: message.createdAt,
+      senderId: message.author.clerkId,
+      senderName: message.author.username,
+    }
+
+    // Here you would typically broadcast the message via Socket.IO
+    // For now, we just return the created message
+    return NextResponse.json(formattedMessage)
   } catch (error) {
     console.error("Error creating message:", error)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    return NextResponse.json({ error: "Failed to create message" }, { status: 500 })
   }
 } 

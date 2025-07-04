@@ -14,6 +14,7 @@ import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { useRooms, useDeleteRoom } from "@/hooks/api/use-rooms"
 import type { Room } from "@/lib/schemas"
+import { useQueryClient } from "@tanstack/react-query"
 
 export default function RoomsPage() {
   const router = useRouter()
@@ -22,6 +23,7 @@ export default function RoomsPage() {
   const [socketConnected, setSocketConnected] = useState(false)
   const socketRef = useRef<any>(null)
   const { user } = useUser()
+  const queryClient = useQueryClient()
 
   // Use React Query for data fetching
   const { data: rooms = [], isLoading, error, refetch } = useRooms(searchQuery)
@@ -29,7 +31,7 @@ export default function RoomsPage() {
 
   // Initialize socket connection for real-time updates
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !user?.id) return;
 
     console.log('Initializing socket connection for rooms page');
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
@@ -39,6 +41,10 @@ export default function RoomsPage() {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 10000,
+      auth: {
+        userId: user.id,
+        // No roomId for room management connections
+      }
     });
     
     socketRef.current = socket;
@@ -58,8 +64,12 @@ export default function RoomsPage() {
 
     socket.on('room-participant-count', ({ roomId, count }) => {
       console.log(`Room ${roomId} participant count updated to ${count}`);
-      // React Query will handle this via refetch
-      refetch();
+      queryClient.setQueryData(['rooms', searchQuery], (oldData: Room[] | undefined) => {
+        if (!oldData) return []
+        return oldData.map(room => 
+          room.id === roomId ? { ...room, participantCount: count } : room
+        )
+      })
     });
 
     socket.on('room-deleted', ({ roomId }) => {
@@ -81,7 +91,7 @@ export default function RoomsPage() {
       console.log('Cleaning up socket connection');
       socket.disconnect();
     };
-  }, [refetch]);
+  }, [refetch, user?.id, searchQuery, queryClient]);
 
   const handleDeleteRoom = async (roomId: string) => {
     if (!user) {
@@ -231,7 +241,7 @@ export default function RoomsPage() {
                   {filteredRooms.map((room) => (
                     <RoomCard 
                       key={room.id} 
-                      {...room} 
+                      {...room}
                       isOwner={user?.id === room.ownerId}
                       onDelete={handleDeleteRoom}
                       onEdit={(id) => router.push(`/rooms/edit/${id}`)}

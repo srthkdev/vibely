@@ -32,6 +32,21 @@ class WebRTCService {
       const webrtcStore = useWebRTCStore.getState()
       const roomStore = useRoomStore.getState()
       
+      // Prevent duplicate initialization
+      if (this.isInitialized && 
+          this.roomId === options.roomId && 
+          this.userId === options.userId && 
+          this.socket?.connected) {
+        console.log('WebRTC service already initialized for this room and user')
+        return true
+      }
+
+      // Clean up any existing connection
+      if (this.isInitialized) {
+        console.log('Cleaning up existing connection before reinitializing')
+        this.disconnect()
+      }
+      
       webrtcStore.setConnectionStatus('connecting')
       webrtcStore.setInitError(null)
       

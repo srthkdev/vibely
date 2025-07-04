@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Mic, MicOff, Video, VideoOff, PhoneOff, MessageSquare, 
-  Settings, Users, Share2, Loader2, MoreVertical 
+  Settings, Users, Share2, Loader2, MoreVertical, UserX, ArrowLeft 
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -33,6 +33,8 @@ interface VideoGridProps {
 function VideoGrid({ localStream, remoteStreams, participants, isAdmin, onAdminAction }: VideoGridProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({})
+  const { user } = useUser()
+  const [adminMenuOpen, setAdminMenuOpen] = useState<string | null>(null)
   const { isMuted, isVideoOff } = useWebRTCStore()
 
   // Update local video element
@@ -52,70 +54,115 @@ function VideoGrid({ localStream, remoteStreams, participants, isAdmin, onAdminA
     })
   }, [remoteStreams])
 
+  // Close admin menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (adminMenuOpen) {
+        setAdminMenuOpen(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [adminMenuOpen])
+  
+  const allParticipants = participants.map(p => {
+    const isLocal = p.id === user?.id
+    return {
+      ...p,
+      isLocal,
+      isMuted: isLocal ? isMuted : p.isMuted,
+      isVideoOff: isLocal ? isVideoOff : p.isVideoOff,
+    }
+  })
+
   const getGridCols = () => {
-    const totalParticipants = participants.length + 1 // +1 for local user
+    const totalParticipants = allParticipants.length
+    if (totalParticipants === 0) return 'grid-cols-1'
     if (totalParticipants <= 2) return 'grid-cols-1 md:grid-cols-2'
     if (totalParticipants <= 4) return 'grid-cols-2'
     if (totalParticipants <= 9) return 'grid-cols-3'
     return 'grid-cols-4'
   }
 
+  const handleAdminAction = (participantId: string, action: string) => {
+    onAdminAction(participantId, action)
+    setAdminMenuOpen(null)
+  }
+
   return (
     <div className={`grid ${getGridCols()} gap-4 p-4 h-full`}>
-      {/* Local Video */}
-      <Card className="relative overflow-hidden border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-black">
-        <video
-          ref={localVideoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        />
-        {isVideoOff && (
-          <div className="absolute inset-0 bg-black flex items-center justify-center">
-            <div className="w-16 h-16 bg-[#FFDC58] rounded-full flex items-center justify-center border-2 border-black">
-              <span className="text-xl font-bold">You</span>
-            </div>
-          </div>
-        )}
-        <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
-          You {isMuted && '(Muted)'}
-        </div>
-      </Card>
-
-      {/* Remote Videos */}
-      {participants.map((participant) => (
+      {allParticipants.map((participant) => (
         <Card key={participant.id} className="relative overflow-hidden border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-black">
           <video
-            ref={(el) => {
+            ref={participant.isLocal ? localVideoRef : (el) => {
               remoteVideoRefs.current[participant.id] = el
             }}
             autoPlay
+            muted={participant.isLocal}
             playsInline
             className="w-full h-full object-cover"
           />
           {participant.isVideoOff && (
             <div className="absolute inset-0 bg-black flex items-center justify-center">
-              <div className="w-16 h-16 bg-[#88AAEE] rounded-full flex items-center justify-center border-2 border-black">
-                <span className="text-xl font-bold text-white">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-black ${
+                participant.isLocal ? 'bg-[#FFDC58]' : 'bg-[#88AAEE]'
+              }`}>
+                <span className={`text-xl font-bold ${participant.isLocal ? 'text-black' : 'text-white'}`}>
                   {participant.name.charAt(0).toUpperCase()}
                 </span>
               </div>
             </div>
           )}
+          
+          {/* User name and status */}
           <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
-            {participant.name} {participant.isMuted && '(Muted)'}
+            {participant.name} 
+            {participant.isAdmin && ' (Admin)'}
+            {participant.isMuted && ' (Muted)'}
           </div>
-          {isAdmin && (
+
+          {/* Admin controls - only show for non-local participants when user is admin */}
+          {isAdmin && !participant.isLocal && (
             <div className="absolute top-2 right-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="bg-black/70 text-white hover:bg-black/90"
-                onClick={() => onAdminAction(participant.id, 'more')}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="bg-black/70 text-white hover:bg-black/90 border border-white/20"
+                  onClick={() => setAdminMenuOpen(adminMenuOpen === participant.id ? null : participant.id)}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+                
+                {adminMenuOpen === participant.id && (
+                  <div className="absolute top-full right-0 mt-1 min-w-[160px] bg-white dark:bg-[#212121] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-md overflow-hidden z-50">
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => handleAdminAction(participant.id, 'mute')}
+                    >
+                      <MicOff className="h-4 w-4" />
+                      Mute Participant
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => handleAdminAction(participant.id, 'disable-video')}
+                    >
+                      <VideoOff className="h-4 w-4" />
+                      Disable Video
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-red-500 transition-colors"
+                      onClick={() => handleAdminAction(participant.id, 'kick')}
+                    >
+                      <UserX className="h-4 w-4" />
+                      Kick Participant
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </Card>
@@ -210,12 +257,17 @@ export default function RoomPage() {
   // Local state
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [hasJoined, setHasJoined] = useState(false)
 
   // Join room effect
   useEffect(() => {
-    if (!room || !user || isConnecting) return
+    if (!room || !user) return
+
+    let isCleanedUp = false
 
     const joinRoom = async () => {
+      if (isConnecting || isCleanedUp || hasJoined) return
+      
       setIsConnecting(true)
       setConnectionError(null)
 
@@ -229,28 +281,37 @@ export default function RoomPage() {
           enableVideo: true,
         })
 
-        if (!success) {
+        if (!success || isCleanedUp) {
           throw new Error('Failed to join room')
         }
 
-        roomStore.setCurrentRoom(room)
-        toast.success(`Joined room: ${room.name}`)
+        if (!isCleanedUp) {
+          roomStore.setCurrentRoom(room)
+          setHasJoined(true)
+          toast.success(`Joined room: ${room.name}`)
+        }
       } catch (error) {
-        console.error('Failed to join room:', error)
-        setConnectionError(error instanceof Error ? error.message : 'Failed to join room')
-        toast.error('Failed to join room')
+        if (!isCleanedUp) {
+          console.error('Failed to join room:', error)
+          setConnectionError(error instanceof Error ? error.message : 'Failed to join room')
+          toast.error('Failed to join room')
+        }
       } finally {
-        setIsConnecting(false)
+        if (!isCleanedUp) {
+          setIsConnecting(false)
+        }
       }
     }
 
     joinRoom()
 
     return () => {
+      isCleanedUp = true
+      setHasJoined(false)
       webrtcService.disconnect()
       roomStore.reset()
     }
-  }, [room, user, roomStore])
+  }, [room?.id, user?.id]) // Remove roomStore from dependencies
 
   // Handle admin actions
   const handleAdminAction = (participantId: string, action: string) => {
@@ -328,30 +389,64 @@ export default function RoomPage() {
       <div className="p-4 border-b-2 border-black bg-white dark:bg-[#212121]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-['Acme',sans-serif]">{room.name}</h1>
-            <div className="flex gap-2">
-              {room.topics.map((topic, index) => (
-                <Badge 
-                  key={topic} 
-                  className={cn(
-                    "border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
-                    index % 3 === 0 && "bg-[#FFDC58]",
-                    index % 3 === 1 && "bg-[#88AAEE]",
-                    index % 3 === 2 && "bg-[#A388EE]"
-                  )}
-                >
-                  {topic}
-                </Badge>
-              ))}
+            {/* Back Button and Logo */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/rooms')}
+                className="border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+              
+              {/* Vibely Logo */}
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#FFDC58] rounded-full flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <span className="text-black font-bold text-sm">V</span>
+                </div>
+                <span className="font-['Acme',sans-serif] text-lg font-bold">Vibely</span>
+              </div>
+            </div>
+            
+            <div className="h-6 w-px bg-black"></div>
+            
+            {/* Room Info */}
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-['Acme',sans-serif]">{room.name}</h1>
+              <div className="flex gap-2">
+                {room.topics.map((topic, index) => (
+                  <Badge 
+                    key={topic} 
+                    className={cn(
+                      "border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+                      index % 3 === 0 && "bg-[#FFDC58]",
+                      index % 3 === 1 && "bg-[#88AAEE]",
+                      index % 3 === 2 && "bg-[#A388EE]"
+                    )}
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm bg-[#f8f9fa] dark:bg-[#2a2a2a] px-3 py-1 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               <Users className="h-4 w-4" />
-              <span>{roomStore.participants.length + 1}/{room.maxUsers}</span>
+              <span className="font-semibold">{roomStore.participants.length}/{room.maxUsers}</span>
             </div>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href)
+                toast.success('Room link copied to clipboard!')
+              }}
+            >
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
@@ -387,7 +482,7 @@ export default function RoomPage() {
               localStream={webrtcStore.localStream}
               remoteStreams={webrtcStore.remoteStreams}
               participants={roomStore.participants}
-              isAdmin={webrtcStore.isAdmin}
+              isAdmin={!!user && !!room.owner && user.id === room.owner.clerkId}
               onAdminAction={handleAdminAction}
             />
           )}

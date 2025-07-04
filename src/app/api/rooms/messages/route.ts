@@ -1,33 +1,55 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { getAuth } from "@clerk/nextjs/server"
 import { PrismaClient } from "@prisma/client"
+import type { NextRequest } from "next/server"
 
 const prisma = new PrismaClient()
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = auth()
+    const { userId } = getAuth(req)
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const body = await req.json()
-    const { content } = body
+    const { content } = await req.json()
+
+    const user = await prisma.user.findUnique({ where: { clerkId: userId }})
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
 
     const message = await prisma.message.create({
       data: {
         content,
-        senderId: userId,
+        authorId: user.id,
         roomId: params.id,
       },
+      include: {
+        author: {
+          select: {
+            id: true,
+            clerkId: true,
+            username: true,
+          }
+        }
+      }
     })
 
-    return NextResponse.json(message)
+    const formattedMessage = {
+      id: message.id,
+      content: message.content,
+      timestamp: message.createdAt,
+      senderId: message.author.clerkId,
+      senderName: message.author.username,
+    }
+
+    return NextResponse.json(formattedMessage)
   } catch (error) {
     console.error("[ROOM_MESSAGE_POST]", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 })
   }
 } 

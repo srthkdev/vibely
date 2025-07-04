@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Participant } from '@/lib/mediasoup';
 import { 
   MicOff, 
   VideoOff, 
@@ -9,6 +8,14 @@ import {
   ChevronUp,
   Shield 
 } from 'lucide-react';
+
+interface Participant {
+  id: string;
+  name: string;
+  isMuted?: boolean;
+  isVideoOff?: boolean;
+  isAdmin?: boolean;
+}
 import {
   DropdownMenu,
   DropdownMenuContent,

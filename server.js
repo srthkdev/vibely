@@ -73,10 +73,13 @@ const getRoomParticipants = (roomId) => {
   return participantsList;
 };
 
-// Broadcast updated participant count to all users in a room
+// Broadcast updated participant count to all users in a room AND to room management
 const broadcastParticipantCount = (roomId) => {
   const count = getParticipantCount(roomId);
+  // Send to users in the room
   io.to(roomId).emit('room-participant-count', { roomId, count });
+  // Send to room management page users
+  io.to('room-management').emit('room-participant-count', { roomId, count });
 };
 
 // Broadcast updated participants list to all users in a room
@@ -120,10 +123,44 @@ async function verifyAdmin(userId, roomId) {
 io.on('connection', async (socket) => {
   const { userId, roomId, userName, userImage } = socket.handshake.auth;
   
+  // Handle room management connections (for rooms list page)
+  if (!roomId && userId) {
+    console.log(`Room management connection from user ${userId}`);
+    socket.join('room-management');
+    
+    socket.on('join-room-management', () => {
+      console.log(`User ${userId} explicitly joined room-management`);
+      socket.join('room-management');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log(`Room management user ${userId} disconnected`);
+    });
+    
+    return; // Exit early for room management connections
+  }
+  
   if (!userId || !roomId) {
     console.log('Connection rejected: missing userId or roomId');
     socket.disconnect();
     return;
+  }
+  
+  // Check if user is already connected to this room
+  const existingUser = users.get(userId);
+  if (existingUser && rooms.has(roomId) && rooms.get(roomId).has(userId)) {
+    console.log(`User ${userId} already connected to room ${roomId}, disconnecting old connection`);
+    
+    // Disconnect the old socket
+    const oldSocketId = existingUser.socketId;
+    const oldSocket = io.sockets.sockets.get(oldSocketId);
+    if (oldSocket) {
+      oldSocket.disconnect();
+    }
+    
+    // Clean up old data
+    rooms.get(roomId).delete(userId);
+    users.delete(userId);
   }
   
   console.log(`User ${userId} (${userName}) connected to room ${roomId}`);

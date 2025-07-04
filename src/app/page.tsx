@@ -1,13 +1,11 @@
 'use client'
 
-import { TypeAnimation } from 'react-type-animation'
-import { FaVideo, FaUsers, FaLock, FaComments } from 'react-icons/fa'
-import Marquee from "react-fast-marquee"
+
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useState, useEffect } from "react"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import TestimonialsCarousel from '@/components/TestimonialsCarousel'
 import FAQ from '@/components/FAQ'
 import Footer from '@/components/Footer'
@@ -42,8 +40,7 @@ export default function HomePage() {
             y: 0,
             opacity: 1,
             transition: {
-                duration: 0.5,
-                ease: "easeOut"
+                duration: 0.5
             }
         }
     }
@@ -53,7 +50,7 @@ export default function HomePage() {
         visible: {
             scale: 1,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 260,
                 damping: 20
             }
@@ -72,7 +69,7 @@ export default function HomePage() {
         visible: {
             scale: 1,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 260,
                 damping: 20,
                 delay: 1.5
@@ -89,7 +86,7 @@ export default function HomePage() {
             y: 0,
             opacity: 1,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 100,
                 damping: 20,
                 delay: 1.2
