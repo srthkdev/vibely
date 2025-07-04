@@ -16,9 +16,9 @@ import { useState } from "react"
 interface RoomCardProps {
   id: string
   name: string
-  description: string
+  description: string | null
   topics: string[]
-  participantCount: number
+  participantCount?: number
   maxUsers: number
   isPublic: boolean
   image?: string | null
@@ -115,7 +115,7 @@ export function RoomCard({
             )}
           </div>
         </div>
-        <CardDescription className="line-clamp-2">{description}</CardDescription>
+        <CardDescription className="line-clamp-2">{description || 'No description provided'}</CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4 pb-2">
@@ -132,7 +132,7 @@ export function RoomCard({
         
         <div className="flex items-center gap-2 text-sm font-medium">
           <Users className="h-4 w-4" />
-          <span>{participantCount}/{maxUsers} participants</span>
+          <span>{participantCount || 0}/{maxUsers} participants</span>
         </div>
       </CardContent>
       

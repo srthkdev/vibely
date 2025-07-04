@@ -5,6 +5,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Optimized for NeonDB
+  relationMode = "prisma"
 }
 
 model User {

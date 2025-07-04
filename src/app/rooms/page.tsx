@@ -12,30 +12,22 @@ import { Skeleton } from "@/components/ui/skeleton"
 import io from "socket.io-client"
 import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
-
-interface Room {
-  id: string
-  name: string
-  description: string
-  topics: string[]
-  participantCount: number
-  maxUsers: number
-  isPublic: boolean
-  image?: string | null
-  ownerId?: string
-}
+import { useRooms, useDeleteRoom } from "@/hooks/api/use-rooms"
+import type { Room } from "@/lib/schemas"
 
 export default function RoomsPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [loading, setLoading] = useState(true)
   const [socketConnected, setSocketConnected] = useState(false)
   const socketRef = useRef<any>(null)
   const { user } = useUser()
 
-  // Initialize socket connection
+  // Use React Query for data fetching
+  const { data: rooms = [], isLoading, error, refetch } = useRooms(searchQuery)
+  const deleteRoomMutation = useDeleteRoom()
+
+  // Initialize socket connection for real-time updates
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -61,21 +53,18 @@ export default function RoomsPage() {
 
     socket.on('rooms-updated', () => {
       console.log('Received rooms-updated event, refreshing rooms');
-      fetchRooms();
+      refetch();
     });
 
     socket.on('room-participant-count', ({ roomId, count }) => {
       console.log(`Room ${roomId} participant count updated to ${count}`);
-      setRooms(prevRooms => 
-        prevRooms.map(room => 
-          room.id === roomId ? { ...room, participantCount: count } : room
-        )
-      );
+      // React Query will handle this via refetch
+      refetch();
     });
 
     socket.on('room-deleted', ({ roomId }) => {
       console.log(`Room ${roomId} has been deleted`);
-      setRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
+      refetch();
     });
 
     socket.on('connect_error', (error) => {
@@ -92,54 +81,24 @@ export default function RoomsPage() {
       console.log('Cleaning up socket connection');
       socket.disconnect();
     };
-  }, []);
-
-  // Fetch rooms from the API
-  const fetchRooms = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/rooms?query=${searchQuery}`)
-      if (response.ok) {
-        const data = await response.json()
-        setRooms(data)
-      }
-    } catch (error) {
-      console.error("Error fetching rooms:", error)
-    } finally {
-      setLoading(false)
-    }
-  };
-
-  useEffect(() => {
-    fetchRooms()
-  }, [searchQuery]);
+  }, [refetch]);
 
   const handleDeleteRoom = async (roomId: string) => {
     if (!user) {
+      toast.error('You must be logged in to delete rooms');
       return;
     }
 
     try {
-      const response = await fetch(`/api/rooms/${roomId}`, {
-        method: 'DELETE',
-      });
+      await deleteRoomMutation.mutateAsync({ roomId, userId: user.id });
       
-      if (response.ok) {
-        // Remove room from local state
-        setRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
-        
-        // Emit room-deleted event to all clients
-        if (socketRef.current) {
-          socketRef.current.emit('room-deleted', { roomId });
-        }
-        
-        toast.success('Room deleted successfully');
-      } else {
-        throw new Error('Failed to delete room');
+      // Emit room-deleted event to all clients
+      if (socketRef.current) {
+        socketRef.current.emit('room-deleted', { roomId });
       }
     } catch (error) {
+      // Error is already handled by the mutation
       console.error('Error deleting room:', error);
-      toast.error('Failed to delete room');
     }
   };
 
@@ -182,6 +141,16 @@ export default function RoomsPage() {
             <h1 className="font-['Acme',sans-serif]">Browse Rooms</h1>
           </div>
         </div>
+
+        {/* Real-time connection status */}
+        {socketConnected && (
+          <div className="max-w-6xl mx-auto mb-4">
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Connected - Real-time updates active</span>
+            </div>
+          </div>
+        )}
 
         <div className="max-w-6xl mx-auto">
           {/* Search and Create Room */}
@@ -228,7 +197,7 @@ export default function RoomsPage() {
             </div>
           )}
 
-          {loading ? (
+          {isLoading ? (
             <div className="w-full py-8">
               <div className="flex items-center justify-center mb-6">
                 <Loader2 className="h-8 w-8 text-black dark:text-white animate-spin mr-2" />
