@@ -9,4 +9,7 @@ restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 [env]
-NODE_ENV = "production" 
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs", "npm"] 
